@@ -1,0 +1,2222 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#080c0e">
+  <title>扫雷肉鸽 · MINE//RUSH</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --void: #06090b;
+      --ink: #0a0f12;
+      --panel: #10171b;
+      --panel-hi: #162126;
+      --line: #26353a;
+      --line-hi: #3c5055;
+      --paper: #eef7ef;
+      --muted: #8da0a2;
+      --acid: #d9ff43;
+      --acid-soft: rgba(217, 255, 67, .18);
+      --mint: #55f2c2;
+      --amber: #ffb83f;
+      --danger: #ff4765;
+      --danger-soft: rgba(255, 71, 101, .18);
+      --blue: #64baff;
+      --cell-gap: 3px;
+      --radius: 16px;
+      --shadow: 0 24px 70px rgba(0, 0, 0, .42);
+      --display: "Avenir Next Condensed", "DIN Condensed", "Trebuchet MS", sans-serif;
+      --mono: "SFMono-Regular", "Cascadia Code", "Roboto Mono", ui-monospace, monospace;
+    }
+
+    * { box-sizing: border-box; }
+
+    html { min-height: 100%; background: var(--void); }
+
+    body {
+      min-width: 300px;
+      min-height: 100svh;
+      margin: 0;
+      overflow-x: hidden;
+      color: var(--paper);
+      font-family: var(--display);
+      background:
+        radial-gradient(circle at 15% 8%, rgba(85, 242, 194, .09), transparent 27rem),
+        radial-gradient(circle at 92% 34%, rgba(255, 184, 63, .07), transparent 25rem),
+        linear-gradient(135deg, #080d10 0%, #05080a 55%, #0b1012 100%);
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      z-index: -2;
+      pointer-events: none;
+      background-image:
+        linear-gradient(rgba(255,255,255,.018) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.018) 1px, transparent 1px);
+      background-size: 32px 32px;
+      mask-image: linear-gradient(to bottom, rgba(0,0,0,.85), transparent 92%);
+    }
+
+    body::after {
+      content: "";
+      position: fixed;
+      inset: 0;
+      z-index: 30;
+      pointer-events: none;
+      opacity: .18;
+      background: repeating-linear-gradient(to bottom, transparent 0 3px, rgba(0,0,0,.14) 3px 4px);
+      mix-blend-mode: multiply;
+    }
+
+    button { font: inherit; }
+
+    button:focus-visible,
+    summary:focus-visible {
+      outline: 2px solid var(--acid);
+      outline-offset: 3px;
+    }
+
+    .app {
+      position: relative;
+      width: min(1180px, calc(100% - 28px));
+      margin: 0 auto;
+      padding: 22px 0 max(32px, env(safe-area-inset-bottom));
+    }
+
+    .topbar {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 20px;
+      margin-bottom: 16px;
+    }
+
+    .brand-kicker,
+    .eyebrow {
+      color: var(--muted);
+      font: 700 .68rem/1 var(--mono);
+      letter-spacing: .22em;
+      text-transform: uppercase;
+    }
+
+    .brand {
+      display: flex;
+      align-items: baseline;
+      gap: 12px;
+      margin-top: 5px;
+    }
+
+    .brand h1 {
+      margin: 0;
+      color: var(--paper);
+      font-size: clamp(1.75rem, 4.2vw, 3.5rem);
+      font-weight: 900;
+      line-height: .88;
+      letter-spacing: -.045em;
+      text-transform: uppercase;
+    }
+
+    .brand h1 span { color: var(--acid); }
+
+    .brand-cn {
+      color: var(--muted);
+      font-size: .82rem;
+      font-weight: 800;
+      letter-spacing: .18em;
+      white-space: nowrap;
+    }
+
+    .top-actions { display: flex; align-items: center; gap: 8px; }
+
+    .icon-button,
+    .seed-chip,
+    .floor-chip {
+      min-height: 38px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: rgba(14, 21, 24, .82);
+      color: var(--muted);
+      box-shadow: inset 0 1px rgba(255,255,255,.035);
+    }
+
+    .icon-button {
+      width: 42px;
+      padding: 0;
+      cursor: pointer;
+      color: var(--paper);
+      font-size: 1rem;
+      transition: border-color .16s, color .16s, transform .16s;
+    }
+
+    .icon-button:hover { color: var(--acid); border-color: var(--line-hi); transform: translateY(-1px); }
+
+    .floor-chip {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 0 14px;
+      font: 800 .72rem/1 var(--mono);
+      letter-spacing: .08em;
+    }
+
+    .floor-chip strong { color: var(--acid); font-size: 1rem; }
+
+    .stats {
+      display: grid;
+      grid-template-columns: 1.15fr 1fr 1.05fr 1.5fr;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .stat-card,
+    .panel {
+      border: 1px solid var(--line);
+      background: linear-gradient(145deg, rgba(22, 32, 37, .95), rgba(10, 15, 18, .97));
+      box-shadow: inset 0 1px rgba(255,255,255,.035), var(--shadow);
+    }
+
+    .stat-card {
+      position: relative;
+      min-height: 86px;
+      padding: 13px 15px 12px;
+      overflow: hidden;
+      border-radius: 12px;
+    }
+
+    .stat-card::after {
+      content: "";
+      position: absolute;
+      right: -16px;
+      bottom: -20px;
+      width: 70px;
+      height: 70px;
+      border: 1px solid rgba(255,255,255,.045);
+      transform: rotate(45deg);
+    }
+
+    .stat-label {
+      display: flex;
+      justify-content: space-between;
+      color: var(--muted);
+      font: 700 .65rem/1 var(--mono);
+      letter-spacing: .13em;
+      text-transform: uppercase;
+    }
+
+    .stat-value {
+      position: relative;
+      z-index: 1;
+      margin-top: 8px;
+      color: var(--paper);
+      font: 900 clamp(1.3rem, 2.3vw, 2rem)/1 var(--mono);
+      letter-spacing: -.06em;
+    }
+
+    .stat-value small {
+      color: var(--muted);
+      font-size: .68rem;
+      letter-spacing: 0;
+    }
+
+    .hp-row { display: flex; align-items: center; gap: 7px; letter-spacing: .02em; }
+    .heart { color: var(--danger); filter: drop-shadow(0 0 7px rgba(255,71,101,.34)); }
+    .heart.empty { color: #354247; filter: none; }
+    .gold-value { color: var(--amber); }
+    .combo-value { color: var(--acid); text-shadow: 0 0 18px rgba(217,255,67,.18); }
+
+    .score-bar {
+      position: relative;
+      z-index: 1;
+      height: 5px;
+      margin-top: 10px;
+      overflow: hidden;
+      border-radius: 99px;
+      background: #050809;
+      box-shadow: inset 0 0 0 1px #202b2f;
+    }
+
+    .score-bar > i,
+    .combo-bar > i {
+      display: block;
+      width: 0;
+      height: 100%;
+      background: linear-gradient(90deg, var(--mint), var(--acid));
+      box-shadow: 0 0 16px var(--acid);
+      transition: width .12s linear;
+    }
+
+    .stat-card.target-hit {
+      border-color: rgba(217,255,67,.72);
+      animation: targetFlash .7s ease both;
+    }
+
+    .combo-strip {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      align-items: center;
+      gap: 12px;
+      min-height: 34px;
+      margin-bottom: 12px;
+      padding: 7px 12px;
+      border: 1px solid var(--line);
+      border-radius: 9px;
+      background: rgba(5, 9, 11, .8);
+      font: 700 .67rem/1 var(--mono);
+      letter-spacing: .11em;
+      text-transform: uppercase;
+    }
+
+    .combo-strip-label { color: var(--muted); }
+    .combo-state { min-width: 74px; color: var(--muted); text-align: right; }
+    .combo-state.hot { color: var(--acid); }
+    .combo-state.frozen { color: var(--blue); }
+
+    .combo-bar {
+      height: 8px;
+      overflow: hidden;
+      border-radius: 99px;
+      background: #101619;
+      box-shadow: inset 0 0 0 1px #263238;
+    }
+
+    .combo-bar > i.danger { background: linear-gradient(90deg, var(--danger), var(--amber)); box-shadow: 0 0 13px var(--danger); }
+    .combo-bar > i.frozen { background: linear-gradient(90deg, var(--blue), #c2edff); box-shadow: 0 0 13px var(--blue); }
+
+    .play-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 300px;
+      align-items: start;
+      gap: 12px;
+    }
+
+    .panel { border-radius: var(--radius); }
+
+    .board-panel {
+      position: relative;
+      padding: 13px;
+      overflow: hidden;
+    }
+
+    .board-panel::before {
+      content: "";
+      position: absolute;
+      inset: 0 auto 0 0;
+      width: 4px;
+      background: repeating-linear-gradient(to bottom, var(--acid) 0 16px, transparent 16px 28px);
+      opacity: .72;
+    }
+
+    .board-toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      min-height: 34px;
+      margin-bottom: 10px;
+      padding: 0 3px 0 6px;
+      color: var(--muted);
+      font: 700 .68rem/1 var(--mono);
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    .board-toolbar strong { color: var(--paper); }
+    .board-meta { display: flex; gap: 14px; align-items: center; }
+
+    .seed-chip {
+      min-height: 26px;
+      padding: 0 9px;
+      color: #718488;
+      font: 700 .58rem/24px var(--mono);
+      letter-spacing: .05em;
+    }
+
+    .board-frame {
+      position: relative;
+      width: min(100%, 690px);
+      margin: 0 auto;
+      padding: 7px;
+      border: 1px solid #334247;
+      border-radius: 11px;
+      background:
+        linear-gradient(135deg, rgba(217,255,67,.08), transparent 10%),
+        #070b0d;
+      box-shadow: inset 0 0 0 4px #0d1417, 0 24px 54px rgba(0,0,0,.35);
+    }
+
+    .board {
+      --size: 10;
+      display: grid;
+      grid-template-columns: repeat(var(--size), minmax(0, 1fr));
+      gap: var(--cell-gap);
+      width: 100%;
+      aspect-ratio: 1;
+      touch-action: manipulation;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+    }
+
+    .cell {
+      position: relative;
+      display: grid;
+      place-items: center;
+      min-width: 0;
+      min-height: 0;
+      padding: 0;
+      overflow: hidden;
+      border: 1px solid #314147;
+      border-radius: clamp(2px, .55vw, 5px);
+      background: linear-gradient(145deg, #26343a 0%, #172125 55%, #11181b 100%);
+      color: var(--paper);
+      box-shadow:
+        inset 1px 1px rgba(255,255,255,.07),
+        inset -2px -2px rgba(0,0,0,.34),
+        0 1px 0 rgba(0,0,0,.55);
+      cursor: pointer;
+      font: 900 clamp(.62rem, 2.45vw, 1.38rem)/1 var(--mono);
+      transition: border-color .08s, filter .08s, transform .08s;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .cell:hover:not(.revealed) {
+      z-index: 2;
+      border-color: var(--acid);
+      filter: brightness(1.19);
+      transform: translateY(-1px);
+    }
+
+    .cell:active:not(.revealed) { transform: translateY(1px) scale(.96); }
+
+    .cell.revealed {
+      border-color: #1c292d;
+      background: #0b1113;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.012);
+      cursor: default;
+    }
+
+    .cell.revealed:hover.numbered { border-color: #3d5156; background: #10191c; cursor: pointer; }
+    .cell.flagged { color: var(--amber); text-shadow: 0 0 10px rgba(255,184,63,.42); }
+    .cell.exploded { border-color: var(--danger); background: #32131b; color: #fff; text-shadow: 0 0 14px var(--danger); }
+    .cell.game-over-mine { color: #aa777f; background: #1a1013; }
+    .cell.wrong-flag { color: var(--danger); }
+
+    .cell.hinted:not(.revealed) {
+      z-index: 3;
+      border-color: var(--mint);
+      animation: hintPulse 1s ease-in-out infinite;
+    }
+
+    .cell.hinted:not(.revealed)::after {
+      content: "";
+      width: 27%;
+      aspect-ratio: 1;
+      border-radius: 50%;
+      background: var(--mint);
+      box-shadow: 0 0 12px 4px rgba(85,242,194,.52);
+    }
+
+    .cell.opening { animation: cellOpen .36s cubic-bezier(.2,.9,.25,1.25) both; animation-delay: var(--wave-delay, 0ms); }
+    .cell.denied { animation: cellDenied .28s ease; }
+    .n1 { color: #79c5ff; }
+    .n2 { color: #72e5ac; }
+    .n3 { color: #ff8b65; }
+    .n4 { color: #bb9aff; }
+    .n5 { color: #ff5e7b; }
+    .n6 { color: #61e8e2; }
+    .n7 { color: #f3f3f3; }
+    .n8 { color: #a0adb0; }
+
+    .mobile-controls {
+      display: none;
+      grid-template-columns: 1fr auto;
+      gap: 9px;
+      margin-top: 11px;
+    }
+
+    .mode-switch {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 3px;
+      padding: 3px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #080c0e;
+    }
+
+    .mode-button,
+    .action-button,
+    .primary-button,
+    .secondary-button,
+    .buy-button {
+      border: 0;
+      cursor: pointer;
+      font-weight: 900;
+      letter-spacing: .04em;
+      transition: transform .12s, filter .12s, opacity .12s;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .mode-button {
+      min-height: 46px;
+      padding: 0 14px;
+      border-radius: 7px;
+      background: transparent;
+      color: var(--muted);
+    }
+
+    .mode-button.active { background: var(--acid); color: #101407; }
+
+    .action-button {
+      min-height: 52px;
+      padding: 0 16px;
+      border: 1px solid rgba(100,186,255,.45);
+      border-radius: 9px;
+      background: linear-gradient(135deg, rgba(100,186,255,.24), rgba(100,186,255,.08));
+      color: #dff5ff;
+      box-shadow: 0 8px 22px rgba(0,0,0,.25);
+    }
+
+    .action-button strong { display: block; font: 900 1rem/1 var(--mono); }
+    .action-button small { display: block; margin-top: 4px; color: #93b9c8; font: 700 .58rem/1 var(--mono); }
+    .action-button:hover:not(:disabled), .primary-button:hover:not(:disabled), .buy-button:hover:not(:disabled) { filter: brightness(1.12); transform: translateY(-1px); }
+    button:disabled { cursor: not-allowed; opacity: .38; filter: saturate(.35); }
+
+    .side-stack { display: grid; gap: 12px; }
+    .side-panel { padding: 15px; box-shadow: 0 16px 44px rgba(0,0,0,.25); }
+
+    .panel-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .panel-title { margin: 0; font-size: .88rem; font-weight: 900; letter-spacing: .1em; text-transform: uppercase; }
+    .panel-count { color: var(--muted); font: 700 .62rem/1 var(--mono); }
+
+    .loadout { display: grid; gap: 7px; }
+    .empty-loadout { padding: 18px 10px; border: 1px dashed #304046; border-radius: 9px; color: #667a7e; text-align: center; font-size: .76rem; }
+
+    .item-row {
+      display: grid;
+      grid-template-columns: 33px 1fr auto;
+      align-items: center;
+      gap: 9px;
+      min-height: 51px;
+      padding: 7px 9px;
+      border: 1px solid #28383d;
+      border-radius: 9px;
+      background: rgba(7,11,13,.56);
+    }
+
+    .item-icon {
+      display: grid;
+      place-items: center;
+      width: 31px;
+      height: 31px;
+      border: 1px solid #41545a;
+      border-radius: 7px;
+      color: var(--acid);
+      background: #121b1f;
+      font: 900 1rem/1 var(--mono);
+    }
+
+    .item-name { font-size: .78rem; font-weight: 900; }
+    .item-effect { margin-top: 2px; color: var(--muted); font: 700 .58rem/1.25 var(--mono); }
+    .item-level { color: var(--acid); font: 800 .63rem/1 var(--mono); }
+
+    .desktop-active { margin-top: 10px; width: 100%; }
+
+    .rules-list {
+      display: grid;
+      gap: 9px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      color: var(--muted);
+      font-size: .72rem;
+      line-height: 1.35;
+    }
+
+    .rules-list li { display: grid; grid-template-columns: 21px 1fr; gap: 7px; }
+    .rules-list b { color: var(--paper); font-family: var(--mono); }
+
+    .debug-panel summary {
+      cursor: pointer;
+      color: var(--acid);
+      font: 800 .68rem/1 var(--mono);
+      letter-spacing: .09em;
+      text-transform: uppercase;
+    }
+
+    .debug-content {
+      margin-top: 12px;
+      max-height: 350px;
+      overflow: auto;
+      color: #9bb0b3;
+      font: 600 .6rem/1.55 var(--mono);
+      scrollbar-color: #3a4c50 #0a0f11;
+    }
+
+    .debug-floor { padding: 8px 0; border-top: 1px solid #29363a; }
+    .debug-floor strong { color: var(--paper); }
+
+    .footer-note {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      margin-top: 13px;
+      padding: 0 5px;
+      color: #536368;
+      font: 700 .57rem/1.4 var(--mono);
+      letter-spacing: .05em;
+      text-transform: uppercase;
+    }
+
+    .overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 50;
+      display: grid;
+      place-items: center;
+      padding: 18px;
+      background: rgba(2, 5, 6, .78);
+      backdrop-filter: blur(14px);
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity .22s, visibility .22s;
+    }
+
+    .overlay.open { opacity: 1; visibility: visible; }
+
+    .modal {
+      width: min(920px, 100%);
+      max-height: min(860px, calc(100svh - 36px));
+      overflow: auto;
+      border: 1px solid #405258;
+      border-radius: 18px;
+      background:
+        linear-gradient(135deg, rgba(217,255,67,.06), transparent 30%),
+        #0c1215;
+      box-shadow: 0 40px 110px rgba(0,0,0,.7), inset 0 1px rgba(255,255,255,.05);
+      transform: translateY(18px) scale(.985);
+      transition: transform .28s cubic-bezier(.2,.9,.2,1);
+    }
+
+    .overlay.open .modal { transform: none; }
+    .modal-inner { padding: clamp(18px, 4vw, 32px); }
+
+    .shop-summary {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      align-items: center;
+      gap: 18px;
+      padding-bottom: 22px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .grade-badge {
+      display: grid;
+      place-items: center;
+      width: 82px;
+      height: 82px;
+      border: 2px solid var(--acid);
+      border-radius: 50%;
+      color: var(--acid);
+      background: rgba(217,255,67,.07);
+      box-shadow: 0 0 34px rgba(217,255,67,.18), inset 0 0 25px rgba(217,255,67,.08);
+      font: 900 3rem/1 var(--mono);
+      transform: rotate(-5deg);
+    }
+
+    .grade-badge.grade-c { color: var(--muted); border-color: var(--muted); box-shadow: none; }
+    .grade-badge.grade-b { color: var(--blue); border-color: var(--blue); }
+    .grade-badge.grade-a { color: var(--amber); border-color: var(--amber); }
+    .grade-badge.grade-s { color: var(--acid); border-color: var(--acid); animation: gradeS 1.4s ease-in-out infinite alternate; }
+
+    .shop-summary h2,
+    .gameover-title { margin: 4px 0 5px; font-size: clamp(1.45rem, 3vw, 2.5rem); line-height: .95; letter-spacing: -.035em; }
+    .shop-summary p { margin: 0; color: var(--muted); font-size: .8rem; }
+    .summary-money { text-align: right; }
+    .summary-money strong { display: block; color: var(--amber); font: 900 1.7rem/1 var(--mono); }
+    .summary-money span { color: var(--muted); font-size: .65rem; }
+
+    .offer-heading { display: flex; justify-content: space-between; align-items: end; gap: 10px; margin: 22px 0 11px; }
+    .offer-heading h3 { margin: 0; font-size: .9rem; letter-spacing: .1em; text-transform: uppercase; }
+    .offer-heading span { color: var(--muted); font: 700 .6rem/1 var(--mono); }
+
+    .shop-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 9px; }
+
+    .offer-card {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      min-height: 210px;
+      padding: 14px;
+      overflow: hidden;
+      border: 1px solid #304146;
+      border-radius: 12px;
+      background: linear-gradient(155deg, #162126, #0b1013 72%);
+    }
+
+    .offer-card.heal { border-color: rgba(255,71,101,.42); }
+    .offer-card.sold::after { content: "已售罄"; position: absolute; inset: 0; display: grid; place-items: center; background: rgba(5,8,9,.82); color: var(--muted); font: 900 .8rem/1 var(--mono); letter-spacing: .2em; transform: rotate(-8deg); }
+    .offer-top { display: flex; justify-content: space-between; align-items: start; gap: 8px; }
+    .offer-icon { color: var(--acid); font: 900 1.7rem/1 var(--mono); }
+    .offer-type { color: var(--muted); font: 700 .55rem/1 var(--mono); letter-spacing: .1em; text-transform: uppercase; }
+    .offer-name { margin: 18px 0 5px; font-size: 1rem; font-weight: 900; }
+    .offer-effect { min-height: 46px; margin: 0 0 13px; color: var(--muted); font: 650 .67rem/1.45 var(--mono); }
+    .buy-button { width: 100%; min-height: 39px; margin-top: auto; border-radius: 8px; background: var(--acid); color: #101407; }
+    .offer-card.heal .buy-button { background: var(--danger); color: white; }
+
+    .shop-actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .primary-button,
+    .secondary-button {
+      min-height: 46px;
+      padding: 0 19px;
+      border-radius: 9px;
+    }
+
+    .primary-button { background: var(--acid); color: #101407; }
+    .secondary-button { border: 1px solid var(--line-hi); background: #121b1f; color: var(--paper); }
+
+    .gameover-modal { width: min(620px, 100%); text-align: center; }
+    .gameover-mark { margin-bottom: 13px; color: var(--danger); font: 900 .7rem/1 var(--mono); letter-spacing: .26em; text-transform: uppercase; }
+    .gameover-title { font-size: clamp(2rem, 8vw, 4.3rem); color: var(--paper); text-transform: uppercase; }
+    .gameover-title span { color: var(--danger); }
+
+    .run-stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin: 24px 0;
+    }
+
+    .run-stat { padding: 13px 8px; border: 1px solid var(--line); border-radius: 9px; background: #090e10; }
+    .run-stat span { display: block; color: var(--muted); font: 700 .58rem/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; }
+    .run-stat strong { display: block; margin-top: 7px; color: var(--paper); font: 900 1.5rem/1 var(--mono); }
+    .record-line { margin: -8px 0 22px; color: var(--muted); font: 650 .66rem/1.5 var(--mono); }
+
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: max(26px, calc(env(safe-area-inset-bottom) + 16px));
+      z-index: 80;
+      max-width: min(92vw, 520px);
+      padding: 11px 16px;
+      border: 1px solid #52656a;
+      border-radius: 999px;
+      background: rgba(10,16,18,.94);
+      color: var(--paper);
+      box-shadow: 0 15px 35px rgba(0,0,0,.5);
+      font: 800 .72rem/1.25 var(--mono);
+      text-align: center;
+      opacity: 0;
+      pointer-events: none;
+      transform: translate(-50%, 12px);
+    }
+
+    .toast.show { animation: toastIn 2.2s ease both; }
+    .toast.success { border-color: var(--acid); color: var(--acid); }
+    .toast.danger { border-color: var(--danger); color: #ffdce3; }
+    .toast.info { border-color: var(--blue); color: #def4ff; }
+
+    .fx-layer { position: fixed; inset: 0; z-index: 65; pointer-events: none; overflow: hidden; }
+    .coin-fx {
+      position: fixed;
+      left: var(--x);
+      top: var(--y);
+      color: var(--amber);
+      font: 900 .72rem/1 var(--mono);
+      text-shadow: 0 0 8px rgba(255,184,63,.65);
+      animation: coinFly .72s cubic-bezier(.2,.75,.3,1) forwards;
+      animation-delay: var(--delay);
+    }
+
+    .frenzy-frame {
+      position: fixed;
+      inset: 7px;
+      z-index: 40;
+      border: 2px solid transparent;
+      border-radius: 18px;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity .2s;
+    }
+
+    body.frenzy .frenzy-frame {
+      opacity: 1;
+      border-color: var(--acid);
+      box-shadow: inset 0 0 35px rgba(217,255,67,.16), 0 0 24px rgba(217,255,67,.22);
+      animation: frenzyFrame .55s ease-in-out infinite alternate;
+    }
+
+    .app.hit { animation: screenHit .42s cubic-bezier(.36,.07,.19,.97); }
+
+    @keyframes cellOpen {
+      0% { transform: scale(.58) rotate(-4deg); filter: brightness(2.3); opacity: .25; }
+      62% { transform: scale(1.08); }
+      100% { transform: none; filter: none; opacity: 1; }
+    }
+    @keyframes cellDenied { 20%, 70% { transform: translateX(-3px); } 45%, 90% { transform: translateX(3px); } }
+    @keyframes hintPulse { 50% { box-shadow: 0 0 0 2px rgba(85,242,194,.22), 0 0 17px rgba(85,242,194,.38); filter: brightness(1.22); } }
+    @keyframes targetFlash { 35% { box-shadow: 0 0 35px rgba(217,255,67,.35), inset 0 0 20px rgba(217,255,67,.12); transform: translateY(-2px); } }
+    @keyframes gradeS { to { box-shadow: 0 0 55px rgba(217,255,67,.34), inset 0 0 30px rgba(217,255,67,.15); transform: rotate(4deg) scale(1.04); } }
+    @keyframes toastIn { 0%,100% { opacity: 0; transform: translate(-50%,12px); } 12%,82% { opacity: 1; transform: translate(-50%,0); } }
+    @keyframes coinFly { 0% { opacity: 0; transform: translate(-50%,-50%) scale(.7); } 15% { opacity: 1; } 100% { opacity: 0; transform: translate(calc(var(--dx) - 50%), calc(var(--dy) - 50%)) scale(1.12); } }
+    @keyframes frenzyFrame { to { filter: brightness(1.6); transform: scale(.997); } }
+    @keyframes screenHit {
+      10%,90% { transform: translate3d(-3px,0,0); filter: saturate(1.6); }
+      20%,80% { transform: translate3d(5px,1px,0); }
+      30%,50%,70% { transform: translate3d(-7px,-2px,0); }
+      40%,60% { transform: translate3d(7px,2px,0); filter: brightness(1.28) saturate(2); }
+    }
+    @keyframes frenzyCardPulse { 50% { box-shadow: 0 0 30px rgba(217,255,67,.14), inset 0 0 18px rgba(217,255,67,.08); } }
+
+    @media (max-width: 900px) {
+      .play-layout { grid-template-columns: 1fr; }
+      .side-stack { grid-template-columns: repeat(2, minmax(0,1fr)); }
+      .debug-panel { grid-column: 1 / -1; }
+      .desktop-active { display: none; }
+      .mobile-controls { display: grid; }
+      .board-frame { max-width: 680px; }
+    }
+
+    @media (max-width: 700px) {
+      :root { --cell-gap: 1px; }
+      .app { width: min(100% - 16px, 620px); padding-top: 13px; }
+      .topbar { align-items: center; margin-bottom: 11px; }
+      .brand-kicker, .brand-cn { display: none; }
+      .brand { margin: 0; }
+      .brand h1 { font-size: 1.74rem; }
+      .floor-chip { min-height: 35px; padding: 0 10px; }
+      .stats { grid-template-columns: repeat(2, minmax(0,1fr)); gap: 7px; }
+      .stat-card { min-height: 71px; padding: 10px 12px; }
+      .stat-value { margin-top: 6px; font-size: 1.28rem; }
+      .combo-strip { gap: 8px; margin-bottom: 8px; padding-inline: 9px; }
+      .combo-strip-label { display: none; }
+      .combo-strip { grid-template-columns: 1fr auto; }
+      .board-panel { padding: 8px; border-radius: 12px; }
+      .board-toolbar { margin-bottom: 7px; padding-inline: 4px; }
+      .seed-chip { display: none; }
+      .board-frame { padding: 4px; border-radius: 8px; }
+      .cell { border-radius: 2px; font-size: clamp(.58rem, 4.2vw, 1.08rem); }
+      .side-stack { grid-template-columns: 1fr; }
+      .rules-panel { display: none; }
+      .shop-summary { grid-template-columns: auto 1fr; }
+      .summary-money { grid-column: 1 / -1; display: flex; align-items: baseline; justify-content: space-between; text-align: left; }
+      .shop-grid { grid-template-columns: repeat(2, minmax(0,1fr)); }
+      .offer-card { min-height: 192px; }
+      .modal-inner { padding: 18px 14px; }
+      .shop-actions { align-items: stretch; }
+      .shop-actions button { flex: 1; padding-inline: 8px; }
+      .footer-note { display: none; }
+    }
+
+    @media (pointer: coarse) {
+      .mobile-controls { display: grid; }
+      .cell:hover:not(.revealed) { border-color: #314147; filter: none; transform: none; }
+    }
+
+    @media (max-width: 390px) {
+      .app { width: calc(100% - 10px); }
+      .board-panel { padding: 6px; }
+      .board-toolbar { font-size: .59rem; }
+      .mobile-controls { margin-top: 7px; }
+      .mode-button { min-height: 42px; }
+      .action-button { min-height: 48px; padding-inline: 10px; }
+      .shop-grid { gap: 6px; }
+      .offer-card { padding: 11px; min-height: 180px; }
+      .offer-name { margin-top: 12px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="frenzy-frame" aria-hidden="true"></div>
+  <div class="app" id="app">
+    <header class="topbar">
+      <div>
+        <div class="brand-kicker">Rapid clearance protocol</div>
+        <div class="brand">
+          <h1>MINE<span>//</span>RUSH</h1>
+          <div class="brand-cn">扫雷肉鸽</div>
+        </div>
+      </div>
+      <div class="top-actions">
+        <div class="floor-chip">层级 <strong id="floor-value">01</strong></div>
+        <button class="icon-button" id="sound-toggle" type="button" aria-label="关闭声音" title="声音">◖</button>
+      </div>
+    </header>
+
+    <section class="stats" aria-label="游戏状态">
+      <article class="stat-card">
+        <div class="stat-label"><span>HP / 生命</span><span id="hp-number">3/3</span></div>
+        <div class="stat-value hp-row" id="hp-hearts" aria-label="3 点生命"></div>
+      </article>
+      <article class="stat-card" id="gold-card">
+        <div class="stat-label"><span>Credits / 金币</span><span>¤</span></div>
+        <div class="stat-value gold-value" id="gold-value">0</div>
+      </article>
+      <article class="stat-card" id="combo-card">
+        <div class="stat-label"><span>Combo / 连击</span><span id="multiplier-value">×1</span></div>
+        <div class="stat-value combo-value" id="combo-value">0</div>
+      </article>
+      <article class="stat-card" id="score-card">
+        <div class="stat-label"><span>Quota / 分数线</span><span id="score-ratio">0%</span></div>
+        <div class="stat-value"><span id="score-value">0</span> <small>/ <span id="target-value">170</span></small></div>
+        <div class="score-bar"><i id="score-fill"></i></div>
+      </article>
+    </section>
+
+    <div class="combo-strip">
+      <span class="combo-strip-label">Chain decay</span>
+      <div class="combo-bar"><i id="combo-fill"></i></div>
+      <span class="combo-state" id="combo-state">待机</span>
+    </div>
+
+    <main class="play-layout">
+      <section class="panel board-panel" aria-label="扫雷棋盘">
+        <div class="board-toolbar">
+          <div class="board-meta">
+            <span>雷区 <strong id="board-size">10×10</strong></span>
+            <span>标记 <strong id="flag-count">0/15</strong></span>
+          </div>
+          <div class="seed-chip" id="seed-chip">SEED ——</div>
+        </div>
+        <div class="board-frame">
+          <div class="board" id="board" role="grid" aria-label="扫雷棋盘"></div>
+        </div>
+        <div class="mobile-controls">
+          <div class="mode-switch" aria-label="操作模式">
+            <button class="mode-button active" data-mode="reveal" type="button">◇ 翻开</button>
+            <button class="mode-button" data-mode="flag" type="button">⚑ 插旗</button>
+          </div>
+          <button class="action-button" id="hourglass-mobile" type="button" disabled>
+            <strong>⌛ 冻结</strong><small>未获得沙漏</small>
+          </button>
+        </div>
+      </section>
+
+      <aside class="side-stack">
+        <section class="panel side-panel">
+          <div class="panel-head">
+            <h2 class="panel-title">装配栏</h2>
+            <span class="panel-count" id="loadout-count">0 / 7</span>
+          </div>
+          <div class="loadout" id="loadout"></div>
+          <button class="action-button desktop-active" id="hourglass-desktop" type="button" disabled>
+            <strong>⌛ 启动沙漏</strong><small>未获得 · Space</small>
+          </button>
+        </section>
+
+        <section class="panel side-panel rules-panel">
+          <div class="panel-head"><h2 class="panel-title">现场规程</h2></div>
+          <ul class="rules-list">
+            <li><b>01</b><span>左键翻开，右键插旗；点击已开的数字执行 chord。</span></li>
+            <li><b>02</b><span>每次安全翻格回满连击条，手停太久会断链。</span></li>
+            <li><b>03</b><span>踩雷不立刻结束，但会扣除 HP 并打断狂热。</span></li>
+          </ul>
+        </section>
+
+        <details class="panel side-panel debug-panel" id="debug-panel" hidden open>
+          <summary>Debug telemetry</summary>
+          <div class="debug-content" id="debug-content"></div>
+        </details>
+      </aside>
+    </main>
+
+    <footer class="footer-note">
+      <span>鼠标：左键翻开 / 右键插旗 / F 切换模式 / Space 沙漏</span>
+      <span id="storage-state">存档：检测中</span>
+    </footer>
+  </div>
+
+  <div class="overlay" id="shop-overlay" aria-hidden="true">
+    <section class="modal" role="dialog" aria-modal="true" aria-labelledby="shop-title">
+      <div class="modal-inner">
+        <div class="shop-summary">
+          <div class="grade-badge" id="grade-badge">B</div>
+          <div>
+            <div class="eyebrow">Floor clearance report</div>
+            <h2 id="shop-title">区域清扫完成</h2>
+            <p id="grade-copy">表现合格，补给站已经开放。</p>
+          </div>
+          <div class="summary-money"><strong id="shop-gold">0</strong><span>当前金币</span></div>
+        </div>
+
+        <div class="offer-heading">
+          <h3>本层补给</h3>
+          <span>购买后本货位售罄 · 刷新会全部替换</span>
+        </div>
+        <div class="shop-grid" id="shop-grid"></div>
+        <div class="shop-actions">
+          <button class="secondary-button" id="refresh-shop" type="button">刷新 · 10</button>
+          <button class="primary-button" id="next-floor" type="button">进入下一层 →</button>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div class="overlay" id="gameover-overlay" aria-hidden="true">
+    <section class="modal gameover-modal" role="dialog" aria-modal="true" aria-labelledby="gameover-title">
+      <div class="modal-inner">
+        <div class="gameover-mark">Signal lost / run terminated</div>
+        <h2 class="gameover-title" id="gameover-title">本局<span>终止</span></h2>
+        <div class="run-stats">
+          <div class="run-stat"><span>到达层数</span><strong id="final-floor">1</strong></div>
+          <div class="run-stat"><span>最高 Combo</span><strong id="final-combo">0</strong></div>
+          <div class="run-stat"><span>剩余金币</span><strong id="final-gold">0</strong></div>
+        </div>
+        <div class="record-line" id="record-line">历史纪录读取中……</div>
+        <button class="primary-button" id="restart-run" type="button">用新种子再次开局</button>
+      </div>
+    </section>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <div class="fx-layer" id="fx-layer" aria-hidden="true"></div>
+
+  <script>
+    "use strict";
+
+    // 所有会影响平衡的数值只允许出现在 CONFIG 内。
+    const CONFIG = Object.freeze({
+      version: "0.3.0",
+      board: {
+        baseSide: 9,
+        maxSide: 16,
+        baseMineRate: 0.15,
+        mineRateStep: 0.005,
+        maxMineRate: 0.22,
+        firstSafeRadius: 1
+      },
+      hp: { max: 3 },
+      combo: {
+        durationSeconds: 2.5,
+        flagRefillRatio: 0.5,
+        multipliers: [
+          { at: 0, value: 1 },
+          { at: 10, value: 2 },
+          { at: 25, value: 3 },
+          { at: 50, value: 5 }
+        ]
+      },
+      frenzy: {
+        threshold: 30,
+        durationSeconds: 10,
+        coinMultiplier: 2,
+        beatIntervalMs: 420
+      },
+      scoring: {
+        targetPerSafeCell: 2,
+        grades: { S: 2, A: 1.5, B: 1, C: 0 },
+        sBonus: 50
+      },
+      shop: {
+        normalSlots: 3,
+        refreshBase: 10,
+        refreshGrowth: 2,
+        upgradeGrowth: 1.6,
+        healBasePrice: 80,
+        healGrowth: 1.25
+      },
+      items: {
+        hourglass: { name: "沙漏", icon: "⌛", basePrice: 120, baseEffect: 5, growth: 1.1, charges: 3 },
+        slowFuse: { name: "慢燃引信", icon: "≈", basePrice: 150, baseEffect: 1, growth: 1.1 },
+        insurance: { name: "保险丝", icon: "⌁", basePrice: 140, baseEffect: 0.5, growth: 1.1, cap: 0.95 },
+        intuition: { name: "直觉", icon: "◎", basePrice: 130, baseEffect: 2, growth: 0.9, floor: 0.5 },
+        frenzyExtend: { name: "狂热延长", icon: "✦", basePrice: 130, baseEffect: 5, growth: 1.1 },
+        goldenFinger: { name: "金手指", icon: "+", basePrice: 120, baseEffect: 2, growth: 1.1, comboThreshold: 10 },
+        piggyBank: { name: "存钱罐", icon: "¤", basePrice: 100, baseEffect: 20, growth: 1.1, milestones: [25, 50, 100] }
+      },
+      animation: {
+        waveDelayMs: 20,
+        maxCoinFlights: 18,
+        maxRevealTones: 40,
+        floorClearDelayMs: 560,
+        gameOverDelayMs: 440,
+        toastDurationMs: 2200
+      },
+      audio: {
+        revealBaseHz: 176,
+        revealStepHz: 5.2,
+        maxRevealHz: 720,
+        revealDuration: 0.055,
+        revealGain: 0.035,
+        uiGain: 0.045,
+        hitGain: 0.12
+      },
+      storageKey: "mine-rush-records-v1",
+      soundKey: "mine-rush-muted-v1"
+    });
+
+    const $ = (selector, root = document) => root.querySelector(selector);
+    const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
+    const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
+    const roundMoney = value => Math.round(value);
+    const displayMoney = value => Math.floor(value + 1e-7).toLocaleString("zh-CN");
+    const padFloor = value => String(value).padStart(2, "0");
+    const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const debugEnabled = new URLSearchParams(location.search).get("debug") === "1";
+
+    const dom = {
+      app: $("#app"),
+      board: $("#board"),
+      floor: $("#floor-value"),
+      hpNumber: $("#hp-number"),
+      hpHearts: $("#hp-hearts"),
+      gold: $("#gold-value"),
+      combo: $("#combo-value"),
+      comboCard: $("#combo-card"),
+      multiplier: $("#multiplier-value"),
+      score: $("#score-value"),
+      target: $("#target-value"),
+      scoreRatio: $("#score-ratio"),
+      scoreFill: $("#score-fill"),
+      scoreCard: $("#score-card"),
+      comboFill: $("#combo-fill"),
+      comboState: $("#combo-state"),
+      boardSize: $("#board-size"),
+      flagCount: $("#flag-count"),
+      seed: $("#seed-chip"),
+      loadout: $("#loadout"),
+      loadoutCount: $("#loadout-count"),
+      hourglassDesktop: $("#hourglass-desktop"),
+      hourglassMobile: $("#hourglass-mobile"),
+      soundToggle: $("#sound-toggle"),
+      storageState: $("#storage-state"),
+      shopOverlay: $("#shop-overlay"),
+      gradeBadge: $("#grade-badge"),
+      gradeCopy: $("#grade-copy"),
+      shopGold: $("#shop-gold"),
+      shopGrid: $("#shop-grid"),
+      refreshShop: $("#refresh-shop"),
+      nextFloor: $("#next-floor"),
+      gameoverOverlay: $("#gameover-overlay"),
+      finalFloor: $("#final-floor"),
+      finalCombo: $("#final-combo"),
+      finalGold: $("#final-gold"),
+      recordLine: $("#record-line"),
+      restart: $("#restart-run"),
+      toast: $("#toast"),
+      fxLayer: $("#fx-layer"),
+      debugPanel: $("#debug-panel"),
+      debugContent: $("#debug-content")
+    };
+
+    const storage = {
+      enabled: true,
+      get(key) {
+        try { return window.localStorage.getItem(key); }
+        catch (_) { this.enabled = false; return null; }
+      },
+      set(key, value) {
+        try { window.localStorage.setItem(key, value); return true; }
+        catch (_) { this.enabled = false; return false; }
+      }
+    };
+
+    function loadRecords() {
+      const fallback = { runs: 0, bestFloor: 0, bestCombo: 0, bestGold: 0 };
+      const raw = storage.get(CONFIG.storageKey);
+      if (!raw) return fallback;
+      try { return { ...fallback, ...JSON.parse(raw) }; }
+      catch (_) { return fallback; }
+    }
+
+    let records = loadRecords();
+
+    function hashString(text) {
+      let hash = 2166136261;
+      for (let i = 0; i < text.length; i += 1) {
+        hash ^= text.charCodeAt(i);
+        hash = Math.imul(hash, 16777619);
+      }
+      hash += hash << 13;
+      hash ^= hash >>> 7;
+      hash += hash << 3;
+      hash ^= hash >>> 17;
+      hash += hash << 5;
+      return hash >>> 0;
+    }
+
+    function mulberry32(seed) {
+      return function random() {
+        let value = seed += 0x6D2B79F5;
+        value = Math.imul(value ^ value >>> 15, value | 1);
+        value ^= value + Math.imul(value ^ value >>> 7, value | 61);
+        return ((value ^ value >>> 14) >>> 0) / 4294967296;
+      };
+    }
+
+    function scopedSeededRng(runSeed, scope, ...parts) {
+      return mulberry32(hashString([runSeed, scope, ...parts].join("|")));
+    }
+
+    function boardSeed(runSeed, floor, firstCell) {
+      return scopedSeededRng(runSeed, "board", floor, firstCell);
+    }
+
+    function shopSeed(runSeed, floor, refreshCount) {
+      return scopedSeededRng(runSeed, "shop", floor, refreshCount);
+    }
+
+    function hintSeed(runSeed, floor, hintCount) {
+      return scopedSeededRng(runSeed, "hint", floor, hintCount);
+    }
+
+    function shuffled(values, rng) {
+      const result = [...values];
+      for (let i = result.length - 1; i > 0; i -= 1) {
+        const j = Math.floor(rng() * (i + 1));
+        [result[i], result[j]] = [result[j], result[i]];
+      }
+      return result;
+    }
+
+    class SoundEngine {
+      constructor() {
+        this.context = null;
+        this.muted = storage.get(CONFIG.soundKey) === "1";
+        this.frenzyBeat = null;
+      }
+
+      ensure() {
+        if (this.muted) return;
+        try {
+          if (!this.context) {
+            const Context = window.AudioContext || window.webkitAudioContext;
+            if (Context) this.context = new Context();
+          }
+          if (this.context?.state === "suspended") this.context.resume();
+        } catch (_) { /* 无音频时静默降级 */ }
+      }
+
+      tone(frequency, duration, type = "sine", gainValue = CONFIG.audio.uiGain, delay = 0) {
+        if (this.muted) return;
+        this.ensure();
+        if (!this.context) return;
+        try {
+          const now = this.context.currentTime + Math.max(0, delay);
+          const oscillator = this.context.createOscillator();
+          const gain = this.context.createGain();
+          oscillator.type = type;
+          oscillator.frequency.setValueAtTime(frequency, now);
+          gain.gain.setValueAtTime(0.0001, now);
+          gain.gain.exponentialRampToValueAtTime(gainValue, now + 0.008);
+          gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+          oscillator.connect(gain).connect(this.context.destination);
+          oscillator.start(now);
+          oscillator.stop(now + duration + 0.02);
+        } catch (_) { /* 单个音效失败不影响玩法 */ }
+      }
+
+      reveal(combo, delay = 0) {
+        const frequency = Math.min(CONFIG.audio.maxRevealHz, CONFIG.audio.revealBaseHz + combo * CONFIG.audio.revealStepHz);
+        this.tone(frequency, CONFIG.audio.revealDuration, combo >= CONFIG.frenzy.threshold ? "square" : "triangle", CONFIG.audio.revealGain, delay);
+      }
+
+      flag() { this.tone(120, .065, "square", .032); }
+      deny() { this.tone(86, .12, "sawtooth", .035); }
+      purchase() { this.tone(330, .09, "triangle", .05); this.tone(495, .12, "triangle", .04, .07); }
+      target() { this.tone(440, .12, "triangle", .05); this.tone(660, .2, "sine", .045, .09); }
+      frenzyStart() { this.tone(220, .16, "sawtooth", .07); this.tone(440, .24, "square", .045, .08); this.startFrenzyBeat(); }
+      hourglass() { this.tone(620, .14, "sine", .055); this.tone(310, .22, "triangle", .04, .05); }
+
+      hit() {
+        this.ensure();
+        if (!this.context || this.muted) return;
+        try {
+          const duration = .24;
+          const buffer = this.context.createBuffer(1, this.context.sampleRate * duration, this.context.sampleRate);
+          const data = buffer.getChannelData(0);
+          for (let i = 0; i < data.length; i += 1) data[i] = (Math.random() * 2 - 1) * (1 - i / data.length);
+          const source = this.context.createBufferSource();
+          const gain = this.context.createGain();
+          const filter = this.context.createBiquadFilter();
+          filter.type = "lowpass";
+          filter.frequency.value = 520;
+          gain.gain.value = CONFIG.audio.hitGain;
+          source.buffer = buffer;
+          source.connect(filter).connect(gain).connect(this.context.destination);
+          source.start();
+        } catch (_) { /* 静默降级 */ }
+      }
+
+      startFrenzyBeat() {
+        this.stopFrenzyBeat();
+        if (this.muted) return;
+        this.frenzyBeat = setInterval(() => {
+          if (!game?.frenzyActive || game.mode !== "playing") return;
+          this.tone(92, .07, "square", .025);
+        }, CONFIG.frenzy.beatIntervalMs);
+      }
+
+      stopFrenzyBeat() {
+        if (this.frenzyBeat) clearInterval(this.frenzyBeat);
+        this.frenzyBeat = null;
+      }
+
+      toggle() {
+        this.muted = !this.muted;
+        storage.set(CONFIG.soundKey, this.muted ? "1" : "0");
+        if (this.muted) this.stopFrenzyBeat();
+        else { this.ensure(); if (game?.frenzyActive) this.startFrenzyBeat(); this.tone(520, .08, "sine", .035); }
+        renderSoundButton();
+      }
+    }
+
+    const sound = new SoundEngine();
+    let game;
+    let cellElements = [];
+    let toastTimer = null;
+    let lastTick = performance.now();
+    let lastDebugRender = 0;
+
+    function blankItemLevels() {
+      return Object.fromEntries(Object.keys(CONFIG.items).map(key => [key, 0]));
+    }
+
+    function createRunSeed() {
+      const entropy = `${Date.now()}-${performance.now()}-${Math.random()}`;
+      return hashString(entropy).toString(36).toUpperCase().padStart(7, "0");
+    }
+
+    function newRun() {
+      sound.stopFrenzyBeat();
+      game = {
+        mode: "playing",
+        inputMode: "reveal",
+        runSeed: createRunSeed(),
+        floor: 1,
+        hp: CONFIG.hp.max,
+        gold: 0,
+        combo: 0,
+        comboRemainingMs: 0,
+        freezeRemainingMs: 0,
+        frenzyActive: false,
+        frenzyRemainingMs: 0,
+        frenzyTriggeredChain: false,
+        runHighestCombo: 0,
+        items: blankItemLevels(),
+        hourglassCharges: 0,
+        debugFloors: [],
+        currentStats: null,
+        completedFloorStats: null,
+        shop: null
+      };
+      dom.shopOverlay.classList.remove("open");
+      dom.gameoverOverlay.classList.remove("open");
+      dom.shopOverlay.setAttribute("aria-hidden", "true");
+      dom.gameoverOverlay.setAttribute("aria-hidden", "true");
+      startFloor(1);
+    }
+
+    function floorSide(floor) {
+      return Math.min(CONFIG.board.baseSide + floor, CONFIG.board.maxSide);
+    }
+
+    function floorMineRate(floor) {
+      return Math.min(CONFIG.board.baseMineRate + CONFIG.board.mineRateStep * (floor - 1), CONFIG.board.maxMineRate);
+    }
+
+    function startFloor(floor) {
+      game.floor = floor;
+      game.mode = "playing";
+      game.side = floorSide(floor);
+      game.totalCells = game.side * game.side;
+      game.mineRate = floorMineRate(floor);
+      game.mineCount = Math.round(game.totalCells * game.mineRate);
+      game.safeCount = game.totalCells - game.mineCount;
+      game.remainingSafe = game.safeCount;
+      game.target = game.safeCount * CONFIG.scoring.targetPerSafeCell;
+      game.floorScoreExact = 0;
+      game.boardGenerated = false;
+      game.cells = Array.from({ length: game.totalCells }, () => ({
+        mine: false,
+        adjacent: 0,
+        revealed: false,
+        flagged: false,
+        exploded: false
+      }));
+      game.flags = 0;
+      game.combo = 0;
+      game.comboRemainingMs = 0;
+      game.freezeRemainingMs = 0;
+      game.frenzyActive = false;
+      game.frenzyRemainingMs = 0;
+      game.frenzyTriggeredChain = false;
+      game.flagRefreshUsedSinceSafe = false;
+      game.insuranceUsedThisFloor = false;
+      game.piggyMilestones = new Set();
+      game.targetCelebrated = false;
+      game.intuition = { hintIndex: null, armed: true, idleMs: 0, hintCount: 0 };
+      game.currentStats = {
+        floor,
+        startAt: performance.now(),
+        durationSeconds: 0,
+        result: "进行中",
+        comboBreaks: 0,
+        maxCombo: 0,
+        minesHit: 0,
+        score: 0,
+        grade: "—",
+        breakdown: { base: 0, multiplier: 0, frenzy: 0, goldenFinger: 0, piggyBank: 0 },
+        purchases: []
+      };
+      game.completedFloorStats = null;
+      buildBoard();
+      renderAll();
+      showToast(`第 ${floor} 层 · 首次点击保证空区`, "info");
+      lastTick = performance.now();
+    }
+
+    function buildBoard() {
+      dom.board.innerHTML = "";
+      dom.board.style.setProperty("--size", game.side);
+      dom.board.setAttribute("aria-rowcount", String(game.side));
+      dom.board.setAttribute("aria-colcount", String(game.side));
+      const fragment = document.createDocumentFragment();
+      cellElements = game.cells.map((_, index) => {
+        const cell = document.createElement("button");
+        cell.type = "button";
+        cell.className = "cell";
+        cell.dataset.index = String(index);
+        cell.setAttribute("role", "gridcell");
+        cell.setAttribute("aria-label", `第 ${Math.floor(index / game.side) + 1} 行，第 ${index % game.side + 1} 列，未翻开`);
+        fragment.appendChild(cell);
+        return cell;
+      });
+      dom.board.appendChild(fragment);
+    }
+
+    function neighbors(index) {
+      const result = [];
+      const row = Math.floor(index / game.side);
+      const col = index % game.side;
+      for (let dr = -1; dr <= 1; dr += 1) {
+        for (let dc = -1; dc <= 1; dc += 1) {
+          if (dr === 0 && dc === 0) continue;
+          const nextRow = row + dr;
+          const nextCol = col + dc;
+          if (nextRow >= 0 && nextRow < game.side && nextCol >= 0 && nextCol < game.side) {
+            result.push(nextRow * game.side + nextCol);
+          }
+        }
+      }
+      return result.sort((a, b) => a - b);
+    }
+
+    function generateBoard(firstIndex) {
+      const firstRow = Math.floor(firstIndex / game.side);
+      const firstCol = firstIndex % game.side;
+      const candidates = [];
+      for (let index = 0; index < game.totalCells; index += 1) {
+        const row = Math.floor(index / game.side);
+        const col = index % game.side;
+        const inSafeZone = Math.abs(row - firstRow) <= CONFIG.board.firstSafeRadius && Math.abs(col - firstCol) <= CONFIG.board.firstSafeRadius;
+        if (!inSafeZone) candidates.push(index);
+      }
+      const mineIndices = shuffled(candidates, boardSeed(game.runSeed, game.floor, firstIndex)).slice(0, game.mineCount);
+      for (const index of mineIndices) game.cells[index].mine = true;
+      for (let index = 0; index < game.totalCells; index += 1) {
+        if (!game.cells[index].mine) game.cells[index].adjacent = neighbors(index).filter(next => game.cells[next].mine).length;
+      }
+      game.boardGenerated = true;
+    }
+
+    function collectReveal(seedIndices) {
+      const queue = [...new Set(seedIndices)].sort((a, b) => a - b).map(index => ({ index, wave: 0 }));
+      const seen = new Set();
+      const safe = [];
+      const mines = [];
+      for (let cursor = 0; cursor < queue.length; cursor += 1) {
+        const { index, wave } = queue[cursor];
+        if (seen.has(index)) continue;
+        seen.add(index);
+        const cell = game.cells[index];
+        if (!cell || cell.revealed || cell.flagged || cell.exploded) continue;
+        if (cell.mine) {
+          mines.push(index);
+          continue;
+        }
+        safe.push({ index, wave });
+        if (cell.adjacent === 0) {
+          for (const next of neighbors(index)) {
+            if (!seen.has(next) && !game.cells[next].flagged && !game.cells[next].revealed) queue.push({ index: next, wave: wave + 1 });
+          }
+        }
+      }
+      return { safe, mines: [...new Set(mines)].sort((a, b) => a - b) };
+    }
+
+    function comboDurationMs() {
+      const slowFuse = itemEffect("slowFuse");
+      return (CONFIG.combo.durationSeconds + slowFuse) * 1000;
+    }
+
+    function frenzyDurationMs() {
+      return (CONFIG.frenzy.durationSeconds + itemEffect("frenzyExtend")) * 1000;
+    }
+
+    function itemEffect(key, level = game.items[key] || 0) {
+      if (!level) return 0;
+      const config = CONFIG.items[key];
+      const raw = config.baseEffect * Math.pow(config.growth, level - 1);
+      if (key === "insurance") return Math.min(config.cap, raw);
+      if (key === "intuition") return Math.max(config.floor, raw);
+      return raw;
+    }
+
+    function canUpgradeItem(key) {
+      const level = game.items[key] || 0;
+      if (!level) return true;
+      if (key === "insurance") return itemEffect(key, level) < CONFIG.items[key].cap - 1e-9;
+      if (key === "intuition") return itemEffect(key, level) > CONFIG.items[key].floor + 1e-9;
+      return true;
+    }
+
+    function comboMultiplier(combo = game.combo) {
+      let result = CONFIG.combo.multipliers[0].value;
+      for (const tier of CONFIG.combo.multipliers) if (combo >= tier.at) result = tier.value;
+      return result;
+    }
+
+    function attemptReveal(index) {
+      if (game.mode !== "playing") return;
+      const cell = game.cells[index];
+      if (!cell || cell.flagged || cell.exploded) return;
+      markPlayerActivity();
+      if (cell.revealed) {
+        if (cell.adjacent > 0) attemptChord(index);
+        return;
+      }
+      if (!game.boardGenerated) generateBoard(index);
+      resolveReveal([index], "click");
+    }
+
+    function attemptChord(index) {
+      if (game.mode !== "playing") return;
+      const cell = game.cells[index];
+      if (!cell?.revealed || cell.adjacent <= 0) return;
+      markPlayerActivity();
+      const adjacent = neighbors(index);
+      const confirmed = adjacent.filter(next => game.cells[next].flagged || game.cells[next].exploded).length;
+      if (confirmed !== cell.adjacent) {
+        const element = cellElements[index];
+        element.classList.remove("denied");
+        void element.offsetWidth;
+        element.classList.add("denied");
+        sound.deny();
+        const delta = cell.adjacent - confirmed;
+        showToast(delta > 0 ? `还差 ${delta} 个雷标记` : `标记多了 ${Math.abs(delta)} 个`, "info");
+        return;
+      }
+      const targets = adjacent.filter(next => !game.cells[next].revealed && !game.cells[next].flagged && !game.cells[next].exploded);
+      if (targets.length) resolveReveal(targets, "chord");
+    }
+
+    function resolveReveal(seedIndices, source) {
+      const result = collectReveal(seedIndices);
+      if (!result.safe.length && !result.mines.length) return;
+
+      if (result.mines.length) {
+        resolveMineHits(result.mines, source);
+        if (game.hp <= 0) {
+          game.mode = "transition";
+          renderBoard([], result.mines);
+          renderAll();
+          window.setTimeout(showGameOver, CONFIG.animation.gameOverDelayMs);
+          return;
+        }
+      }
+
+      const hintIndexBefore = game.intuition.hintIndex;
+      const opened = [];
+      for (const entry of result.safe) {
+        const cell = game.cells[entry.index];
+        if (cell.revealed) continue;
+        cell.revealed = true;
+        game.remainingSafe -= 1;
+        const reward = awardSafeCell();
+        opened.push({ ...entry, reward, combo: game.combo });
+      }
+      resolveIntuitionAfterSafeOpen(opened.map(entry => entry.index), hintIndexBefore);
+      renderBoard(opened, result.mines);
+      renderAll(false);
+      playRevealSequence(opened);
+      animateCoinFlights(opened);
+
+      if (game.remainingSafe <= 0 && game.mode === "playing") {
+        game.mode = "transition";
+        window.setTimeout(completeFloor, CONFIG.animation.floorClearDelayMs);
+      }
+    }
+
+    function resolveMineHits(mineIndices) {
+      const hitCount = mineIndices.length;
+      let insuranceTriggered = false;
+      for (const index of mineIndices) {
+        const cell = game.cells[index];
+        cell.exploded = true;
+        cell.revealed = true;
+      }
+      game.currentStats.minesHit += hitCount;
+      game.hp = Math.max(0, game.hp - hitCount);
+      endFrenzy();
+
+      if (game.combo > 0) {
+        const insuranceLevel = game.items.insurance;
+        if (insuranceLevel && !game.insuranceUsedThisFloor) {
+          insuranceTriggered = true;
+          game.insuranceUsedThisFloor = true;
+          game.combo = Math.floor(game.combo * itemEffect("insurance"));
+          game.comboRemainingMs = game.combo > 0 ? comboDurationMs() : 0;
+          showToast(`保险丝熔断 · 保留 ${game.combo} combo`, "info");
+          if (hitCount > 1 || game.combo === 0) resetCombo("mine");
+        } else {
+          resetCombo("mine");
+        }
+      }
+
+      sound.hit();
+      triggerHitFeedback(hitCount);
+      if (hitCount > 1) showToast(`错误 chord 引爆 ${hitCount} 颗雷 · HP −${hitCount}`, "danger");
+      else if (!insuranceTriggered) showToast("踩雷 · HP −1", "danger");
+    }
+
+    function triggerHitFeedback(hitCount) {
+      dom.app.classList.remove("hit");
+      void dom.app.offsetWidth;
+      dom.app.classList.add("hit");
+      window.setTimeout(() => dom.app.classList.remove("hit"), 500);
+      try { if (navigator.vibrate) navigator.vibrate(hitCount > 1 ? [70, 35, 110] : 70); }
+      catch (_) { /* 不支持震动时静默 */ }
+    }
+
+    function awardSafeCell() {
+      const beforeScore = game.floorScoreExact;
+      const previousCombo = game.combo;
+      game.combo += 1;
+      game.comboRemainingMs = comboDurationMs();
+      game.flagRefreshUsedSinceSafe = false;
+      game.runHighestCombo = Math.max(game.runHighestCombo, game.combo);
+      game.currentStats.maxCombo = Math.max(game.currentStats.maxCombo, game.combo);
+
+      if (!game.frenzyTriggeredChain && previousCombo < CONFIG.frenzy.threshold && game.combo >= CONFIG.frenzy.threshold) startFrenzy();
+
+      const multiplier = comboMultiplier();
+      const base = 1;
+      const multiplierGain = base * (multiplier - 1);
+      const frenzyGain = game.frenzyActive ? base * multiplier * (CONFIG.frenzy.coinMultiplier - 1) : 0;
+      const goldenGain = game.items.goldenFinger && game.combo > CONFIG.items.goldenFinger.comboThreshold ? itemEffect("goldenFinger") : 0;
+      let reward = base + multiplierGain + frenzyGain + goldenGain;
+
+      game.currentStats.breakdown.base += base;
+      game.currentStats.breakdown.multiplier += multiplierGain;
+      game.currentStats.breakdown.frenzy += frenzyGain;
+      game.currentStats.breakdown.goldenFinger += goldenGain;
+      game.floorScoreExact += reward;
+      game.gold += reward;
+
+      if (game.items.piggyBank) {
+        for (const milestone of CONFIG.items.piggyBank.milestones) {
+          if (game.currentStats.maxCombo >= milestone && !game.piggyMilestones.has(milestone)) {
+            game.piggyMilestones.add(milestone);
+            const amount = itemEffect("piggyBank");
+            game.gold += amount;
+            game.floorScoreExact += amount;
+            game.currentStats.breakdown.piggyBank += amount;
+            reward += amount;
+            showToast(`存钱罐里程碑 ${milestone} · +${formatEffectNumber(amount)} 金币`, "success");
+          }
+        }
+      }
+
+      if (!game.targetCelebrated && beforeScore < game.target && game.floorScoreExact >= game.target) {
+        game.targetCelebrated = true;
+        sound.target();
+        showToast("分数线突破 · 免费刷新已锁定", "success");
+      }
+      return reward;
+    }
+
+    function startFrenzy() {
+      game.frenzyTriggeredChain = true;
+      game.frenzyActive = true;
+      game.frenzyRemainingMs = frenzyDurationMs();
+      document.body.classList.add("frenzy");
+      sound.frenzyStart();
+      showToast("狂热启动 · 金币 ×2", "success");
+    }
+
+    function endFrenzy() {
+      game.frenzyActive = false;
+      game.frenzyRemainingMs = 0;
+      document.body.classList.remove("frenzy");
+      sound.stopFrenzyBeat();
+    }
+
+    function resetCombo(reason) {
+      if (game.combo > 0 && (reason === "timeout" || reason === "mine")) game.currentStats.comboBreaks += 1;
+      game.combo = 0;
+      game.comboRemainingMs = 0;
+      game.freezeRemainingMs = 0;
+      game.frenzyTriggeredChain = false;
+      endFrenzy();
+      if (reason === "timeout") showToast("连击中断", "info");
+    }
+
+    function toggleFlag(index) {
+      if (game.mode !== "playing") return;
+      const cell = game.cells[index];
+      if (!cell || cell.revealed || cell.exploded) return;
+      markPlayerActivity();
+      cell.flagged = !cell.flagged;
+      game.flags += cell.flagged ? 1 : -1;
+      if (cell.flagged) {
+        if (game.combo > 0 && !game.flagRefreshUsedSinceSafe) {
+          game.comboRemainingMs = Math.max(game.comboRemainingMs, comboDurationMs() * CONFIG.combo.flagRefillRatio);
+          game.flagRefreshUsedSinceSafe = true;
+        }
+        if (game.intuition.hintIndex === index) {
+          game.intuition.hintIndex = null;
+          game.intuition.armed = false;
+          game.intuition.idleMs = 0;
+        }
+      }
+      sound.flag();
+      renderBoard();
+      renderStats();
+    }
+
+    function markPlayerActivity() {
+      if (game?.intuition) game.intuition.idleMs = 0;
+    }
+
+    function resolveIntuitionAfterSafeOpen(openedIndices, hintIndexBefore) {
+      if (!game.items.intuition || !openedIndices.length) return;
+      const openedHint = hintIndexBefore !== null && openedIndices.includes(hintIndexBefore);
+      const openedUnhinted = openedIndices.some(index => index !== hintIndexBefore);
+      if (hintIndexBefore !== null) game.intuition.hintIndex = null;
+      if (openedHint && !openedUnhinted) game.intuition.armed = false;
+      else if (openedUnhinted) game.intuition.armed = true;
+      game.intuition.idleMs = 0;
+    }
+
+    function triggerIntuitionHint() {
+      if (!game.items.intuition || !game.boardGenerated || !game.intuition.armed || game.intuition.hintIndex !== null) return;
+      const candidates = game.cells
+        .map((cell, index) => ({ cell, index }))
+        .filter(({ cell }) => !cell.mine && !cell.revealed && !cell.flagged)
+        .map(({ index }) => index);
+      if (!candidates.length) return;
+      const rng = hintSeed(game.runSeed, game.floor, game.intuition.hintCount);
+      game.intuition.hintIndex = candidates[Math.floor(rng() * candidates.length)];
+      game.intuition.hintCount += 1;
+      game.intuition.armed = false;
+      game.intuition.idleMs = 0;
+      renderBoard();
+      showToast("直觉捕捉到一处安全脉冲", "info");
+    }
+
+    function useHourglass() {
+      if (game.mode !== "playing" || !game.items.hourglass || game.hourglassCharges <= 0 || game.combo <= 0 || game.freezeRemainingMs > 0) return;
+      sound.ensure();
+      game.hourglassCharges -= 1;
+      game.freezeRemainingMs = itemEffect("hourglass") * 1000;
+      sound.hourglass();
+      showToast(`沙漏启动 · 冻结 ${formatEffectNumber(itemEffect("hourglass"))} 秒`, "info");
+      renderLoadout();
+      renderHourglassButtons();
+    }
+
+    function completeFloor() {
+      if (game.mode !== "transition") return;
+      game.mode = "shop";
+      endFrenzy();
+      game.comboRemainingMs = 0;
+      game.freezeRemainingMs = 0;
+      game.gold = roundMoney(game.gold);
+      const score = roundMoney(game.floorScoreExact);
+      const ratio = score / game.target;
+      const grade = ratio >= CONFIG.scoring.grades.S ? "S" : ratio >= CONFIG.scoring.grades.A ? "A" : ratio >= CONFIG.scoring.grades.B ? "B" : "C";
+      const freeRefreshes = grade === "C" ? 0 : 1;
+      if (grade === "S") game.gold += CONFIG.scoring.sBonus;
+      game.currentStats.durationSeconds = (performance.now() - game.currentStats.startAt) / 1000;
+      game.currentStats.result = "已通关";
+      game.currentStats.score = score;
+      game.currentStats.grade = grade;
+      game.debugFloors.push(game.currentStats);
+      game.completedFloorStats = game.currentStats;
+      game.shop = { grade, ratio, freeRefreshes, paidRefreshes: 0, generation: 0, slots: [] };
+      generateShop();
+      renderShop();
+      renderAll(false);
+      dom.shopOverlay.classList.add("open");
+      dom.shopOverlay.setAttribute("aria-hidden", "false");
+      sound.target();
+    }
+
+    function gradeCopy(grade, score, target) {
+      if (grade === "S") return `极限清扫：${score} / ${target}，额外获得 ${CONFIG.scoring.sBonus} 金币。`;
+      if (grade === "A") return `高效清扫：${score} / ${target}，获得一次免费刷新。`;
+      if (grade === "B") return `达标清扫：${score} / ${target}，获得一次免费刷新。`;
+      return `低速清扫：${score} / ${target}，本层没有评分奖励。`;
+    }
+
+    function generateShop() {
+      const candidates = Object.keys(CONFIG.items).filter(canUpgradeItem);
+      const rng = shopSeed(game.runSeed, game.floor, game.shop.generation);
+      const selected = shuffled(candidates, rng).slice(0, CONFIG.shop.normalSlots);
+      game.shop.slots = selected.map(key => {
+        const currentLevel = game.items[key] || 0;
+        return {
+          key,
+          currentLevel,
+          nextLevel: currentLevel + 1,
+          price: Math.ceil(CONFIG.items[key].basePrice * Math.pow(CONFIG.shop.upgradeGrowth, currentLevel)),
+          sold: false
+        };
+      });
+    }
+
+    function refreshShop() {
+      if (game.mode !== "shop") return;
+      let price = 0;
+      if (game.shop.freeRefreshes > 0) {
+        game.shop.freeRefreshes -= 1;
+      } else {
+        price = CONFIG.shop.refreshBase * Math.pow(CONFIG.shop.refreshGrowth, game.shop.paidRefreshes);
+        if (game.gold < price) { showToast("金币不足，无法刷新", "danger"); sound.deny(); return; }
+        game.gold -= price;
+        game.shop.paidRefreshes += 1;
+      }
+      game.shop.generation += 1;
+      generateShop();
+      sound.purchase();
+      showToast(price ? `补给刷新 · −${price}` : "使用免费刷新", "info");
+      renderShop();
+      renderStats();
+    }
+
+    function buyShopSlot(slotIndex) {
+      if (game.mode !== "shop") return;
+      const slot = game.shop.slots[slotIndex];
+      if (!slot || slot.sold) return;
+      if (game.gold < slot.price) { showToast("金币不足", "danger"); sound.deny(); return; }
+      game.gold -= slot.price;
+      game.items[slot.key] = slot.nextLevel;
+      if (slot.key === "hourglass" && slot.currentLevel === 0) game.hourglassCharges = CONFIG.items.hourglass.charges;
+      slot.sold = true;
+      game.completedFloorStats?.purchases.push(`${CONFIG.items[slot.key].name} Lv.${slot.nextLevel} −${slot.price}`);
+      sound.purchase();
+      showToast(`${CONFIG.items[slot.key].name} 升至 Lv.${slot.nextLevel}`, "success");
+      renderShop();
+      renderLoadout();
+      renderHourglassButtons();
+      renderStats();
+    }
+
+    function buyHeal() {
+      if (game.mode !== "shop" || game.hp >= CONFIG.hp.max) return;
+      const price = healPrice();
+      if (game.gold < price) { showToast("金币不足", "danger"); sound.deny(); return; }
+      game.gold -= price;
+      game.hp += 1;
+      game.completedFloorStats?.purchases.push(`救心丸 +1 HP −${price}`);
+      sound.purchase();
+      showToast("生命恢复 · HP +1", "success");
+      renderShop();
+      renderStats();
+    }
+
+    function healPrice() {
+      return Math.ceil(CONFIG.shop.healBasePrice * Math.pow(CONFIG.shop.healGrowth, game.floor - 1));
+    }
+
+    function nextFloor() {
+      if (game.mode !== "shop") return;
+      dom.shopOverlay.classList.remove("open");
+      dom.shopOverlay.setAttribute("aria-hidden", "true");
+      startFloor(game.floor + 1);
+    }
+
+    function showGameOver() {
+      if (game.mode === "gameover") return;
+      game.mode = "gameover";
+      endFrenzy();
+      game.comboRemainingMs = 0;
+      game.freezeRemainingMs = 0;
+      game.currentStats.durationSeconds = (performance.now() - game.currentStats.startAt) / 1000;
+      game.currentStats.result = "阵亡";
+      game.currentStats.score = roundMoney(game.floorScoreExact);
+      game.debugFloors.push(game.currentStats);
+      records.runs += 1;
+      records.bestFloor = Math.max(records.bestFloor, game.floor);
+      records.bestCombo = Math.max(records.bestCombo, game.runHighestCombo);
+      records.bestGold = Math.max(records.bestGold, roundMoney(game.gold));
+      storage.set(CONFIG.storageKey, JSON.stringify(records));
+      dom.finalFloor.textContent = game.floor;
+      dom.finalCombo.textContent = game.runHighestCombo;
+      dom.finalGold.textContent = displayMoney(game.gold);
+      dom.recordLine.textContent = `历史最高：第 ${records.bestFloor} 层 · Combo ${records.bestCombo} · 金币 ${records.bestGold} · 共 ${records.runs} 局`;
+      renderBoard();
+      renderDebug();
+      dom.gameoverOverlay.classList.add("open");
+      dom.gameoverOverlay.setAttribute("aria-hidden", "false");
+    }
+
+    function formatEffectNumber(value) {
+      if (Math.abs(value - Math.round(value)) < .005) return String(Math.round(value));
+      return value.toFixed(2).replace(/0+$/, "").replace(/\.$/, "");
+    }
+
+    function itemEffectLabel(key, level = game.items[key]) {
+      const effect = itemEffect(key, level);
+      if (key === "hourglass") return `冻结 ${formatEffectNumber(effect)}s · 剩余 ${game.hourglassCharges} 次`;
+      if (key === "slowFuse") return `计时条 +${formatEffectNumber(effect)}s`;
+      if (key === "insurance") return `每层一次 · 保留 ${Math.round(effect * 100)}%`;
+      if (key === "intuition") return `停手 ${formatEffectNumber(effect)}s 后提示`;
+      if (key === "frenzyExtend") return `狂热 +${formatEffectNumber(effect)}s`;
+      if (key === "goldenFinger") return `Combo >${CONFIG.items.goldenFinger.comboThreshold} 每格 +${formatEffectNumber(effect)}`;
+      if (key === "piggyBank") return `里程碑各 +${formatEffectNumber(effect)}`;
+      return "";
+    }
+
+    function offerEffectLabel(key, nextLevel) {
+      const prefix = game.items[key] ? `Lv.${game.items[key]} → Lv.${nextLevel}` : `获得 Lv.${nextLevel}`;
+      return `${prefix} · ${itemEffectLabel(key, nextLevel).replace(/ · 剩余 \d+ 次/, "")}`;
+    }
+
+    function renderAll(includeBoard = true) {
+      renderStats();
+      if (includeBoard) renderBoard();
+      renderLoadout();
+      renderHourglassButtons();
+      renderModeButtons();
+      renderSoundButton();
+      renderDebug();
+      dom.floor.textContent = padFloor(game.floor);
+      dom.boardSize.textContent = `${game.side}×${game.side}`;
+      dom.seed.textContent = `SEED ${game.runSeed}`;
+      dom.storageState.textContent = storage.enabled ? "存档：LOCAL / 正常" : "存档：不可用 / 无存档模式";
+    }
+
+    function renderStats() {
+      dom.hpNumber.textContent = `${game.hp}/${CONFIG.hp.max}`;
+      dom.hpHearts.innerHTML = Array.from({ length: CONFIG.hp.max }, (_, index) => `<span class="heart${index >= game.hp ? " empty" : ""}">♥</span>`).join("");
+      dom.hpHearts.setAttribute("aria-label", `${game.hp} 点生命`);
+      dom.gold.textContent = displayMoney(game.gold);
+      dom.combo.textContent = game.combo;
+      dom.multiplier.textContent = `×${comboMultiplier()}`;
+      dom.score.textContent = displayMoney(game.floorScoreExact);
+      dom.target.textContent = game.target;
+      const ratio = game.target ? game.floorScoreExact / game.target : 0;
+      dom.scoreRatio.textContent = `${Math.floor(ratio * 100)}%`;
+      dom.scoreFill.style.width = `${Math.min(100, ratio * 100)}%`;
+      dom.scoreCard.classList.toggle("target-hit", game.targetCelebrated);
+      dom.flagCount.textContent = `${game.flags}/${game.mineCount}`;
+    }
+
+    function renderDynamicTimers() {
+      const duration = comboDurationMs();
+      const ratio = game.combo > 0 ? clamp(game.comboRemainingMs / duration, 0, 1) : 0;
+      dom.comboFill.style.width = `${ratio * 100}%`;
+      dom.comboFill.classList.toggle("danger", game.combo > 0 && ratio < .28 && game.freezeRemainingMs <= 0);
+      dom.comboFill.classList.toggle("frozen", game.freezeRemainingMs > 0);
+      dom.comboState.className = "combo-state";
+      if (game.freezeRemainingMs > 0) {
+        dom.comboState.classList.add("frozen");
+        dom.comboState.textContent = `冻结 ${(game.freezeRemainingMs / 1000).toFixed(1)}s`;
+      } else if (game.frenzyActive) {
+        dom.comboState.classList.add("hot");
+        dom.comboState.textContent = `狂热 ${(game.frenzyRemainingMs / 1000).toFixed(1)}s`;
+      } else if (game.combo > 0) {
+        dom.comboState.classList.add("hot");
+        dom.comboState.textContent = `${(game.comboRemainingMs / 1000).toFixed(1)}s`;
+      } else {
+        dom.comboState.textContent = "待机";
+      }
+    }
+
+    function renderBoard(opened = [], exploded = []) {
+      const openingMap = new Map(opened.map(entry => [entry.index, entry.wave]));
+      const explodedSet = new Set(exploded);
+      for (let index = 0; index < game.cells.length; index += 1) {
+        const cell = game.cells[index];
+        const element = cellElements[index];
+        if (!element) continue;
+        const classes = ["cell"];
+        let label = `第 ${Math.floor(index / game.side) + 1} 行，第 ${index % game.side + 1} 列`;
+        let text = "";
+        if (cell.revealed) {
+          classes.push("revealed");
+          if (cell.exploded) {
+            classes.push("exploded"); text = "✹"; label += "，已爆炸的雷";
+          } else if (cell.adjacent > 0) {
+            classes.push("numbered", `n${cell.adjacent}`); text = String(cell.adjacent); label += `，数字 ${cell.adjacent}`;
+          } else label += "，空白安全格";
+        } else if (cell.flagged) {
+          classes.push("flagged"); text = "⚑"; label += "，已插旗";
+          if (game.mode === "gameover" && game.boardGenerated && !cell.mine) classes.push("wrong-flag");
+        } else if (game.mode === "gameover" && game.boardGenerated && cell.mine) {
+          classes.push("revealed", "game-over-mine"); text = "✹"; label += "，未发现的雷";
+        } else {
+          label += "，未翻开";
+        }
+        if (game.intuition?.hintIndex === index && !cell.revealed && !cell.flagged) classes.push("hinted");
+        if (openingMap.has(index)) {
+          classes.push("opening");
+          element.style.setProperty("--wave-delay", `${reducedMotion ? 0 : openingMap.get(index) * CONFIG.animation.waveDelayMs}ms`);
+        } else if (!explodedSet.has(index)) {
+          element.style.removeProperty("--wave-delay");
+        }
+        element.className = classes.join(" ");
+        element.textContent = text;
+        element.setAttribute("aria-label", label);
+        element.setAttribute("aria-pressed", cell.flagged ? "true" : "false");
+      }
+    }
+
+    function renderLoadout() {
+      const owned = Object.keys(CONFIG.items).filter(key => game.items[key] > 0);
+      dom.loadoutCount.textContent = `${owned.length} / ${Object.keys(CONFIG.items).length}`;
+      if (!owned.length) {
+        dom.loadout.innerHTML = `<div class="empty-loadout">当前没有道具<br>完成本层后进入补给站</div>`;
+        return;
+      }
+      dom.loadout.innerHTML = owned.map(key => {
+        const config = CONFIG.items[key];
+        return `<div class="item-row">
+          <div class="item-icon">${config.icon}</div>
+          <div><div class="item-name">${config.name}</div><div class="item-effect">${itemEffectLabel(key)}</div></div>
+          <div class="item-level">Lv.${game.items[key]}</div>
+        </div>`;
+      }).join("");
+    }
+
+    function renderHourglassButtons() {
+      const owned = game.items.hourglass > 0;
+      const disabled = !owned || game.hourglassCharges <= 0 || game.combo <= 0 || game.freezeRemainingMs > 0 || game.mode !== "playing";
+      for (const button of [dom.hourglassDesktop, dom.hourglassMobile]) {
+        button.disabled = disabled;
+        const strong = $("strong", button);
+        const small = $("small", button);
+        strong.textContent = owned ? "⌛ 启动沙漏" : "⌛ 冻结";
+        small.textContent = owned ? `${game.hourglassCharges} 次 · ${formatEffectNumber(itemEffect("hourglass"))}s · Space` : "未获得沙漏";
+      }
+    }
+
+    function renderModeButtons() {
+      $$('[data-mode]').forEach(button => button.classList.toggle("active", button.dataset.mode === game.inputMode));
+    }
+
+    function renderSoundButton() {
+      dom.soundToggle.textContent = sound.muted ? "×" : "◖";
+      dom.soundToggle.setAttribute("aria-label", sound.muted ? "开启声音" : "关闭声音");
+      dom.soundToggle.title = sound.muted ? "开启声音" : "关闭声音";
+    }
+
+    function renderShop() {
+      const { grade } = game.shop;
+      const score = roundMoney(game.floorScoreExact);
+      dom.gradeBadge.textContent = grade;
+      dom.gradeBadge.className = `grade-badge grade-${grade.toLowerCase()}`;
+      dom.gradeCopy.textContent = gradeCopy(grade, score, game.target);
+      dom.shopGold.textContent = displayMoney(game.gold);
+      const normalCards = game.shop.slots.map((slot, index) => {
+        const config = CONFIG.items[slot.key];
+        const affordable = game.gold >= slot.price;
+        return `<article class="offer-card${slot.sold ? " sold" : ""}">
+          <div class="offer-top"><span class="offer-icon">${config.icon}</span><span class="offer-type">${slot.currentLevel ? "Upgrade" : "New gear"}</span></div>
+          <div class="offer-name">${config.name}</div>
+          <p class="offer-effect">${offerEffectLabel(slot.key, slot.nextLevel)}</p>
+          <button class="buy-button" type="button" data-buy-slot="${index}" ${slot.sold || !affordable ? "disabled" : ""}>${slot.price} 金币</button>
+        </article>`;
+      }).join("");
+      const heal = healPrice();
+      const healDisabled = game.hp >= CONFIG.hp.max || game.gold < heal;
+      const healCopy = game.hp >= CONFIG.hp.max ? "生命已满，当前不可购买。" : `恢复 1 HP，最多恢复至 ${CONFIG.hp.max}。`;
+      dom.shopGrid.innerHTML = `${normalCards}<article class="offer-card heal">
+        <div class="offer-top"><span class="offer-icon">♥</span><span class="offer-type">Guaranteed</span></div>
+        <div class="offer-name">救心丸</div>
+        <p class="offer-effect">${healCopy}</p>
+        <button class="buy-button" id="buy-heal" type="button" ${healDisabled ? "disabled" : ""}>${heal} 金币</button>
+      </article>`;
+      const refreshPrice = CONFIG.shop.refreshBase * Math.pow(CONFIG.shop.refreshGrowth, game.shop.paidRefreshes);
+      dom.refreshShop.textContent = game.shop.freeRefreshes > 0 ? `免费刷新 · ${game.shop.freeRefreshes}` : `刷新 · ${refreshPrice}`;
+      dom.refreshShop.disabled = game.shop.freeRefreshes <= 0 && game.gold < refreshPrice;
+      dom.nextFloor.textContent = `进入第 ${game.floor + 1} 层 →`;
+    }
+
+    function renderDebug() {
+      if (!debugEnabled) return;
+      dom.debugPanel.hidden = false;
+      const rows = [...game.debugFloors];
+      if (game.mode !== "shop" && game.mode !== "gameover" && game.currentStats) {
+        rows.push({ ...game.currentStats, durationSeconds: (performance.now() - game.currentStats.startAt) / 1000, score: roundMoney(game.floorScoreExact) });
+      }
+      dom.debugContent.innerHTML = rows.map(stats => {
+        const b = stats.breakdown;
+        return `<div class="debug-floor">
+          <strong>F${stats.floor} · ${stats.result} · ${stats.durationSeconds.toFixed(1)}s</strong><br>
+          score=${stats.score} grade=${stats.grade} maxCombo=${stats.maxCombo}<br>
+          breaks=${stats.comboBreaks} mines=${stats.minesHit}<br>
+          gold: base ${formatEffectNumber(b.base)} / mult +${formatEffectNumber(b.multiplier)} / frenzy +${formatEffectNumber(b.frenzy)} / finger +${formatEffectNumber(b.goldenFinger)} / piggy +${formatEffectNumber(b.piggyBank)}<br>
+          buys: ${stats.purchases.length ? stats.purchases.join(" | ") : "—"}
+        </div>`;
+      }).join("") || "尚无数据";
+    }
+
+    function playRevealSequence(opened) {
+      const sample = opened.length <= CONFIG.animation.maxRevealTones
+        ? opened
+        : opened.filter((_, index) => index % Math.ceil(opened.length / CONFIG.animation.maxRevealTones) === 0).slice(0, CONFIG.animation.maxRevealTones);
+      sample.forEach((entry, index) => {
+        const delay = reducedMotion ? 0 : (entry.wave * CONFIG.animation.waveDelayMs + index * 3) / 1000;
+        sound.reveal(entry.combo, delay);
+      });
+    }
+
+    function animateCoinFlights(opened) {
+      if (!opened.length || reducedMotion) return;
+      requestAnimationFrame(() => {
+        const target = $("#gold-card").getBoundingClientRect();
+        const step = Math.max(1, Math.ceil(opened.length / CONFIG.animation.maxCoinFlights));
+        const sample = opened.filter((_, index) => index % step === 0).slice(0, CONFIG.animation.maxCoinFlights);
+        for (const entry of sample) {
+          const cell = cellElements[entry.index];
+          if (!cell) continue;
+          const rect = cell.getBoundingClientRect();
+          const startX = rect.left + rect.width / 2;
+          const startY = rect.top + rect.height / 2;
+          const endX = target.left + target.width / 2;
+          const endY = target.top + target.height / 2;
+          const particle = document.createElement("span");
+          particle.className = "coin-fx";
+          particle.textContent = `+${formatEffectNumber(entry.reward)}`;
+          particle.style.setProperty("--x", `${startX}px`);
+          particle.style.setProperty("--y", `${startY}px`);
+          particle.style.setProperty("--dx", `${endX - startX}px`);
+          particle.style.setProperty("--dy", `${endY - startY}px`);
+          particle.style.setProperty("--delay", `${entry.wave * CONFIG.animation.waveDelayMs}ms`);
+          dom.fxLayer.appendChild(particle);
+          window.setTimeout(() => particle.remove(), 1200 + entry.wave * CONFIG.animation.waveDelayMs);
+        }
+      });
+    }
+
+    function showToast(message, type = "info") {
+      clearTimeout(toastTimer);
+      dom.toast.className = `toast ${type}`;
+      dom.toast.textContent = message;
+      void dom.toast.offsetWidth;
+      dom.toast.classList.add("show");
+      toastTimer = window.setTimeout(() => dom.toast.classList.remove("show"), CONFIG.animation.toastDurationMs);
+    }
+
+    function tick(now) {
+      const delta = clamp(now - lastTick, 0, 250);
+      lastTick = now;
+      if (game && game.mode === "playing" && !document.hidden) {
+        if (game.combo > 0) {
+          if (game.freezeRemainingMs > 0) game.freezeRemainingMs = Math.max(0, game.freezeRemainingMs - delta);
+          else {
+            game.comboRemainingMs -= delta;
+            if (game.comboRemainingMs <= 0) {
+              resetCombo("timeout");
+              renderStats();
+              renderHourglassButtons();
+            }
+          }
+        }
+        if (game.frenzyActive) {
+          game.frenzyRemainingMs -= delta;
+          if (game.frenzyRemainingMs <= 0) endFrenzy();
+        }
+        if (game.items.intuition && game.boardGenerated && game.intuition.armed && game.intuition.hintIndex === null) {
+          game.intuition.idleMs += delta;
+          if (game.intuition.idleMs >= itemEffect("intuition") * 1000) triggerIntuitionHint();
+        }
+        renderDynamicTimers();
+        renderHourglassButtons();
+        if (debugEnabled && now - lastDebugRender > 900) { renderDebug(); lastDebugRender = now; }
+      }
+      requestAnimationFrame(tick);
+    }
+
+    dom.board.addEventListener("click", event => {
+      const button = event.target.closest(".cell");
+      if (!button) return;
+      sound.ensure();
+      const index = Number(button.dataset.index);
+      const cell = game.cells[index];
+      if (cell?.revealed && cell.adjacent > 0) attemptChord(index);
+      else if (game.inputMode === "flag") toggleFlag(index);
+      else attemptReveal(index);
+    });
+
+    dom.board.addEventListener("contextmenu", event => {
+      const button = event.target.closest(".cell");
+      if (!button) return;
+      event.preventDefault();
+      sound.ensure();
+      toggleFlag(Number(button.dataset.index));
+    });
+
+    $$('[data-mode]').forEach(button => button.addEventListener("click", () => {
+      if (game.mode !== "playing") return;
+      game.inputMode = button.dataset.mode;
+      markPlayerActivity();
+      sound.flag();
+      renderModeButtons();
+    }));
+
+    dom.hourglassDesktop.addEventListener("click", useHourglass);
+    dom.hourglassMobile.addEventListener("click", useHourglass);
+    dom.soundToggle.addEventListener("click", () => sound.toggle());
+    dom.refreshShop.addEventListener("click", refreshShop);
+    dom.nextFloor.addEventListener("click", nextFloor);
+    dom.restart.addEventListener("click", newRun);
+
+    dom.shopGrid.addEventListener("click", event => {
+      const slotButton = event.target.closest("[data-buy-slot]");
+      if (slotButton) buyShopSlot(Number(slotButton.dataset.buySlot));
+      else if (event.target.closest("#buy-heal")) buyHeal();
+    });
+
+    document.addEventListener("pointerdown", () => sound.ensure(), { once: true, capture: true });
+    document.addEventListener("visibilitychange", () => { lastTick = performance.now(); });
+    document.addEventListener("keydown", event => {
+      if (event.code === "Space") {
+        if (game.items.hourglass && game.mode === "playing") { event.preventDefault(); useHourglass(); }
+      } else if (event.key.toLowerCase() === "f" && game.mode === "playing") {
+        game.inputMode = game.inputMode === "reveal" ? "flag" : "reveal";
+        markPlayerActivity();
+        renderModeButtons();
+      }
+    });
+
+    dom.debugPanel.hidden = !debugEnabled;
+    newRun();
+    requestAnimationFrame(tick);
+  </script>
+</body>
+</html>
