@@ -262,9 +262,7 @@
 
     .combo-strip {
       display: grid;
-      grid-template-columns: auto 1fr auto;
-      align-items: center;
-      gap: 12px;
+      gap: 6px;
       min-height: 34px;
       margin-bottom: 12px;
       padding: 7px 12px;
@@ -276,20 +274,59 @@
       text-transform: uppercase;
     }
 
-    .combo-strip-label { color: var(--muted); }
-    .combo-state { min-width: 74px; color: var(--muted); text-align: right; }
+    .rhythm-row {
+      display: grid;
+      grid-template-columns: 132px minmax(100px, 1fr) 126px;
+      align-items: center;
+      gap: 12px;
+      min-height: 20px;
+    }
+
+    .rhythm-row + .rhythm-row {
+      padding-top: 6px;
+      border-top: 1px solid rgba(255,255,255,.055);
+    }
+
+    .momentum-row[hidden] { display: none; }
+    .combo-strip-label { display: flex; align-items: baseline; gap: 5px; color: var(--muted); white-space: nowrap; }
+    .label-cn { color: #8fa0a6; letter-spacing: .05em; }
+    .label-divider { color: #45545a; }
+    .momentum-label, .momentum-label .label-cn { color: var(--amber); }
+    .combo-state { min-width: 0; color: var(--muted); text-align: right; white-space: nowrap; }
     .combo-state.hot { color: var(--acid); }
     .combo-state.frozen { color: var(--blue); }
     .combo-state.momentum { color: var(--amber); text-shadow: 0 0 12px rgba(255,184,63,.24); }
 
-    .combo-bar {
+    .momentum-state {
+      color: #bd8f47;
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    .momentum-state.burning { color: #ffe17a; text-shadow: 0 0 13px rgba(255,184,63,.48); }
+    .momentum-state.frozen { color: var(--blue); }
+
+    .momentum-row.burning {
+      margin: 0 -6px -1px;
+      padding-inline: 6px;
+      border-radius: 5px;
+      background: linear-gradient(90deg, rgba(255,184,63,.09), transparent 72%);
+    }
+
+    .combo-bar,
+    .momentum-bar {
       position: relative;
-      height: 8px;
+      height: 9px;
       overflow: hidden;
       border-radius: 99px;
       background: #101619;
       box-shadow: inset 0 0 0 1px #263238;
       transition: border-color .14s, box-shadow .14s;
+    }
+
+    .momentum-bar {
+      background: #17130b;
+      box-shadow: inset 0 0 0 1px rgba(255,184,63,.22);
     }
 
     .combo-fill {
@@ -299,31 +336,26 @@
     }
 
     .momentum-fill {
-      position: absolute;
-      left: 0;
-      bottom: 0;
-      z-index: 2;
       display: block;
       width: 0;
-      height: 2px;
+      height: 100%;
       border-radius: 99px;
       background: linear-gradient(90deg, #ff8e2b, var(--amber), #ffe17a);
       box-shadow: 0 0 10px rgba(255,184,63,.72);
-      transition: width .12s linear, height .14s ease, filter .14s ease;
+      transition: width .12s linear, filter .14s ease;
     }
 
-    .combo-bar.burning {
+    .momentum-bar.burning {
       box-shadow: inset 0 0 0 1px rgba(255,184,63,.58), 0 0 15px rgba(255,184,63,.16);
     }
 
-    .combo-bar.burning .momentum-fill {
-      height: 100%;
+    .momentum-bar.burning .momentum-fill {
       animation: momentumBurn .55s ease-in-out infinite alternate;
     }
 
     .combo-fill.danger { background: linear-gradient(90deg, var(--danger), var(--amber)); box-shadow: 0 0 13px var(--danger); }
     .combo-fill.frozen { background: linear-gradient(90deg, var(--blue), #c2edff); box-shadow: 0 0 13px var(--blue); }
-    .combo-bar.frozen .momentum-fill { filter: saturate(.55) brightness(1.35); animation-play-state: paused; }
+    .momentum-bar.frozen .momentum-fill { filter: saturate(.55) brightness(1.35); animation-play-state: paused; }
 
     .play-layout {
       display: grid;
@@ -935,9 +967,12 @@
       .stats { grid-template-columns: repeat(2, minmax(0,1fr)); gap: 7px; }
       .stat-card { min-height: 71px; padding: 10px 12px; }
       .stat-value { margin-top: 6px; font-size: 1.28rem; }
-      .combo-strip { gap: 8px; margin-bottom: 8px; padding-inline: 9px; }
-      .combo-strip-label { display: none; }
-      .combo-strip { grid-template-columns: 1fr auto; }
+      .combo-strip { gap: 5px; margin-bottom: 8px; padding-inline: 9px; }
+      .rhythm-row { grid-template-columns: 46px minmax(70px, 1fr) 78px; gap: 8px; }
+      .rhythm-row + .rhythm-row { padding-top: 5px; }
+      .combo-strip-label { font-size: .55rem; letter-spacing: .06em; }
+      .label-en, .label-divider { display: none; }
+      .combo-state, .momentum-state { font-size: .58rem; letter-spacing: .045em; }
       .board-panel { padding: 8px; border-radius: 12px; }
       .board-toolbar { margin-bottom: 7px; padding-inline: 4px; }
       .seed-chip { display: none; }
@@ -1017,13 +1052,21 @@
       </article>
     </section>
 
-    <div class="combo-strip">
-      <span class="combo-strip-label" id="combo-strip-label">Chain / Momentum</span>
-      <div class="combo-bar" id="combo-bar" aria-label="连击计时与余势">
-        <i class="combo-fill" id="combo-fill"></i>
-        <i class="momentum-fill" id="momentum-fill"></i>
+    <div class="combo-strip" id="rhythm-stack">
+      <div class="rhythm-row">
+        <span class="combo-strip-label" id="combo-strip-label"><span class="label-en">Chain</span><span class="label-divider">/</span><span class="label-cn">连击</span></span>
+        <div class="combo-bar" id="combo-bar" aria-label="连击基础计时">
+          <i class="combo-fill" id="combo-fill"></i>
+        </div>
+        <span class="combo-state" id="combo-state">待机</span>
       </div>
-      <span class="combo-state" id="combo-state">待机</span>
+      <div class="rhythm-row momentum-row" id="momentum-row">
+        <span class="combo-strip-label momentum-label"><span class="label-en">Momentum</span><span class="label-divider">/</span><span class="label-cn">余势</span></span>
+        <div class="momentum-bar" id="momentum-bar" aria-label="余势 0 秒">
+          <i class="momentum-fill" id="momentum-fill"></i>
+        </div>
+        <span class="momentum-state" id="momentum-state">0.0 / 3.0s</span>
+      </div>
     </div>
 
     <main class="play-layout">
@@ -1139,7 +1182,7 @@
 
     // 所有会影响平衡的数值只允许出现在 CONFIG 内。
     const CONFIG = Object.freeze({
-      version: "0.5.1",
+      version: "0.5.2",
       board: {
         baseSide: 9,
         maxSide: 16,
@@ -1264,7 +1307,10 @@
       comboStripLabel: $("#combo-strip-label"),
       comboBar: $("#combo-bar"),
       comboFill: $("#combo-fill"),
+      momentumRow: $("#momentum-row"),
+      momentumBar: $("#momentum-bar"),
       momentumFill: $("#momentum-fill"),
+      momentumState: $("#momentum-state"),
       comboState: $("#combo-state"),
       rhythmRule: $("#rhythm-rule"),
       boardSize: $("#board-size"),
@@ -2466,7 +2512,8 @@
       dom.seed.textContent = game.economyCalibrated
         ? `SEED ${game.runSeed} · Q${Math.round(game.floorSeedIndex * 100)}`
         : `SEED ${game.runSeed} · SCAN`;
-      dom.comboStripLabel.textContent = CONFIG.momentum.enabled ? "Chain / Momentum" : "Chain decay";
+      $(".label-en", dom.comboStripLabel).textContent = CONFIG.momentum.enabled ? "Chain" : "Decay";
+      $(".label-cn", dom.comboStripLabel).textContent = CONFIG.momentum.enabled ? "连击" : "衰减";
       dom.rhythmRule.textContent = CONFIG.momentum.enabled
         ? "快速安全翻格积攒余势；基础计时耗尽后自动救链，狂热最低收紧至 10 秒。"
         : "每次安全翻格回满连击条；狂热从 15 秒逐层收紧，最低 10 秒。";
@@ -2498,41 +2545,51 @@
       const momentumRatio = capacityMs > 0 ? clamp(visibleMomentumMs / capacityMs, 0, 1) : 0;
       const burning = isMomentumBurning();
       const frozen = game.freezeRemainingMs > 0;
+      const baseSeconds = (Math.max(0, game.comboRemainingMs) / 1000).toFixed(1);
+      const momentumSeconds = (Math.max(0, visibleMomentumMs) / 1000).toFixed(1);
+      const momentumCapacitySeconds = (capacityMs / 1000).toFixed(1);
+      const frenzySeconds = (Math.max(0, game.frenzyRemainingMs) / 1000).toFixed(1);
+
       dom.comboFill.style.width = `${ratio * 100}%`;
       dom.momentumFill.style.width = `${momentumRatio * 100}%`;
       dom.comboFill.classList.toggle("danger", game.combo > 0 && ratio < .28 && visibleMomentumMs <= 0 && !frozen);
       dom.comboFill.classList.toggle("frozen", frozen);
-      dom.comboBar.classList.toggle("burning", burning);
       dom.comboBar.classList.toggle("frozen", frozen);
+      dom.momentumRow.hidden = !CONFIG.momentum.enabled;
+      dom.momentumRow.classList.toggle("burning", burning);
+      dom.momentumBar.classList.toggle("burning", burning);
+      dom.momentumBar.classList.toggle("frozen", frozen);
+
       dom.comboState.className = "combo-state";
-      const baseSeconds = (Math.max(0, game.comboRemainingMs) / 1000).toFixed(1);
-      const momentumSeconds = (Math.max(0, visibleMomentumMs) / 1000).toFixed(1);
-      const frenzySeconds = (Math.max(0, game.frenzyRemainingMs) / 1000).toFixed(1);
       if (frozen) {
         dom.comboState.classList.add("frozen");
         dom.comboState.textContent = `冻结 ${(game.freezeRemainingMs / 1000).toFixed(1)}s`;
-      } else if (burning) {
-        dom.comboState.classList.add("momentum");
-        dom.comboState.textContent = game.frenzyActive
-          ? `余势 ${momentumSeconds}s · 狂热 ${frenzySeconds}s`
-          : `余势 ${momentumSeconds}s`;
       } else if (game.frenzyActive) {
         dom.comboState.classList.add("hot");
-        dom.comboState.textContent = visibleMomentumMs > 0
-          ? `狂热 ${frenzySeconds}s · 余 ${momentumSeconds}s`
-          : `狂热 ${frenzySeconds}s`;
+        dom.comboState.textContent = `狂热 ${frenzySeconds}s`;
+      } else if (burning) {
+        dom.comboState.classList.add("momentum");
+        dom.comboState.textContent = "基础耗尽";
       } else if (game.combo > 0) {
         dom.comboState.classList.add("hot");
-        dom.comboState.textContent = visibleMomentumMs > 0
-          ? `${baseSeconds}s · 余 ${momentumSeconds}s`
-          : `${baseSeconds}s`;
+        dom.comboState.textContent = `${baseSeconds}s`;
       } else {
         dom.comboState.textContent = "待机";
       }
-      const ariaParts = [`基础计时 ${baseSeconds} 秒`];
-      if (CONFIG.momentum.enabled) ariaParts.push(`余势 ${momentumSeconds} 秒`);
-      if (game.frenzyActive) ariaParts.push(`狂热 ${frenzySeconds} 秒`);
-      dom.comboBar.setAttribute("aria-label", ariaParts.join("，"));
+
+      dom.momentumState.className = "momentum-state";
+      if (frozen && game.combo > 0) {
+        dom.momentumState.classList.add("frozen");
+        dom.momentumState.textContent = `冻结 · ${momentumSeconds}s`;
+      } else if (burning) {
+        dom.momentumState.classList.add("burning");
+        dom.momentumState.textContent = `接管 ${momentumSeconds}s`;
+      } else {
+        dom.momentumState.textContent = `${momentumSeconds} / ${momentumCapacitySeconds}s`;
+      }
+
+      dom.comboBar.setAttribute("aria-label", `连击基础计时 ${baseSeconds} 秒${game.frenzyActive ? `，狂热 ${frenzySeconds} 秒` : ""}`);
+      dom.momentumBar.setAttribute("aria-label", `余势 ${momentumSeconds} 秒，共 ${momentumCapacitySeconds} 秒${burning ? "，正在接管连击" : ""}`);
     }
 
     function renderBoard(opened = [], exploded = []) {
