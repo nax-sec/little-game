@@ -1010,7 +1010,7 @@
           <div class="panel-head"><h2 class="panel-title">现场规程</h2></div>
           <ul class="rules-list">
             <li><b>01</b><span>电脑左键翻开、右键插旗；手机轻点翻开、按住插旗。点击已开的数字执行 chord。</span></li>
-            <li><b>02</b><span>每次安全翻格回满连击条，手停太久会断链。</span></li>
+            <li><b>02</b><span>每次安全翻格回满连击条；狂热从 15 秒逐层收紧，最低 10 秒。</span></li>
             <li><b>03</b><span>首击扫描矿区潜力，随后锁定本层动态配额与补给行情。</span></li>
             <li><b>04</b><span>踩雷不立刻结束，但会扣除 HP 并打断狂热。</span></li>
           </ul>
@@ -1079,7 +1079,7 @@
 
     // 所有会影响平衡的数值只允许出现在 CONFIG 内。
     const CONFIG = Object.freeze({
-      version: "0.4.0",
+      version: "0.4.1",
       board: {
         baseSide: 9,
         maxSide: 16,
@@ -1101,7 +1101,9 @@
       },
       frenzy: {
         threshold: 30,
-        durationSeconds: 10,
+        durationStartSeconds: 15,
+        durationDecayPerFloor: 1,
+        durationMinSeconds: 10,
         coinMultiplier: 2,
         beatIntervalMs: 420
       },
@@ -1125,7 +1127,7 @@
         marketElasticity: 0.6,
         marketIndexMin: 1.05,
         marketIndexMax: 1.5,
-        referencePotential: [0, 504, 634, 794, 939, 1094, 1259, 1409, 1364, 1344, 1314, 1284, 1249, 1214, 1209, 1189]
+        referencePotential: [0, 534, 669, 819, 954, 1109, 1259, 1409, 1364, 1344, 1314, 1284, 1249, 1214, 1209, 1189]
       },
       shop: {
         normalSlots: 3,
@@ -1498,6 +1500,7 @@
         minesHit: 0,
         score: 0,
         grade: "—",
+        frenzyBaseSeconds: baseFrenzyDurationSeconds(floor),
         baseTarget: game.baseTarget,
         target: null,
         firstOpenCount: 0,
@@ -1647,7 +1650,7 @@
           combo += 1;
           if (!frenzyTriggered && previousCombo < CONFIG.frenzy.threshold && combo >= CONFIG.frenzy.threshold) {
             frenzyTriggered = true;
-            frenzyRemainingMs = CONFIG.frenzy.durationSeconds * 1000;
+            frenzyRemainingMs = baseFrenzyDurationSeconds(board.floor) * 1000;
           }
           const multiplier = comboMultiplier(combo);
           score += multiplier * (frenzyRemainingMs > 0 ? CONFIG.frenzy.coinMultiplier : 1);
@@ -1791,8 +1794,15 @@
       return (CONFIG.combo.durationSeconds + slowFuse) * 1000;
     }
 
+    function baseFrenzyDurationSeconds(floor = game.floor) {
+      return Math.max(
+        CONFIG.frenzy.durationStartSeconds - CONFIG.frenzy.durationDecayPerFloor * (floor - 1),
+        CONFIG.frenzy.durationMinSeconds
+      );
+    }
+
     function frenzyDurationMs() {
-      return (CONFIG.frenzy.durationSeconds + itemEffect("frenzyExtend")) * 1000;
+      return (baseFrenzyDurationSeconds() + itemEffect("frenzyExtend")) * 1000;
     }
 
     function itemEffect(key, level = game.items[key] || 0) {
@@ -1983,7 +1993,7 @@
       game.frenzyRemainingMs = frenzyDurationMs();
       document.body.classList.add("frenzy");
       sound.frenzyStart();
-      showToast("狂热启动 · 金币 ×2", "success");
+      showToast(`狂热启动 · ${formatEffectNumber(frenzyDurationMs() / 1000)}s · 金币 ×2`, "success");
     }
 
     function endFrenzy() {
@@ -2410,7 +2420,7 @@
         const b = stats.breakdown;
         return `<div class="debug-floor">
           <strong>F${stats.floor} · ${stats.result} · ${stats.durationSeconds.toFixed(1)}s</strong><br>
-          score=${stats.score} grade=${stats.grade} maxCombo=${stats.maxCombo}<br>
+          score=${stats.score} grade=${stats.grade} maxCombo=${stats.maxCombo} frenzyBase=${stats.frenzyBaseSeconds}s<br>
           economy: first=${stats.firstOpenCount} potential=${stats.potential}/${stats.referencePotential} raw=${Number(stats.rawSeedIndex).toFixed(3)} quota=${Number(stats.seedIndex).toFixed(3)} target=${stats.target ?? "SCAN"} market=×${Number(stats.marketIndex).toFixed(3)} eval=${Number(stats.economyEvalMs).toFixed(1)}ms<br>
           breaks=${stats.comboBreaks} mines=${stats.minesHit}<br>
           gold: base ${formatEffectNumber(b.base)} / mult +${formatEffectNumber(b.multiplier)} / frenzy +${formatEffectNumber(b.frenzy)} / finger +${formatEffectNumber(b.goldenFinger)} / piggy +${formatEffectNumber(b.piggyBank)}<br>
