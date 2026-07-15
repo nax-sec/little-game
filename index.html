@@ -1182,7 +1182,7 @@
 
     // 所有会影响平衡的数值只允许出现在 CONFIG 内。
     const CONFIG = Object.freeze({
-      version: "0.5.3",
+      version: "0.5.4",
       board: {
         baseSide: 9,
         maxSide: 16,
@@ -1190,7 +1190,7 @@
         mineRateStep: 0.005,
         maxMineRate: 0.22,
         firstSafeRadius: 1,
-        firstCascadeUncapped: true,
+        firstCascadeMaxSafeRatio: 0.25,
         maxCascadeSideMultiplier: 2,
         maxGenerationAttempts: 256
       },
@@ -1633,6 +1633,8 @@
         baseTarget: game.baseTarget,
         target: null,
         firstOpenCount: 0,
+        firstCascadeLimit: 0,
+        firstOpenRatio: 0,
         maxCascadeCells: 0,
         cascadeLimit: 0,
         boardGenerationAttempts: 0,
@@ -1727,27 +1729,34 @@
       const side = floorSide(floor);
       const cascadeLimit = maxCascadeCellsForSide(side);
       let bestBoard = null;
+      let bestOverflow = Infinity;
       let bestCascade = Infinity;
 
       for (let attempt = 0; attempt < CONFIG.board.maxGenerationAttempts; attempt += 1) {
         const board = createBoardCandidate(runSeed, floor, firstIndex, attempt);
         const groups = buildBenchmarkRevealGroups(board);
         const firstCascadeGroup = groups[firstIndex];
+        const firstCascadeCells = firstCascadeGroup?.length || 0;
+        const firstCascadeLimit = Math.max(1, Math.round(board.safeCount * CONFIG.board.firstCascadeMaxSafeRatio));
         const maxCascadeCells = groups.reduce((largest, group) => {
-          if (CONFIG.board.firstCascadeUncapped && group === firstCascadeGroup) return largest;
+          if (group === firstCascadeGroup) return largest;
           return Math.max(largest, group?.length || 0);
         }, 0);
+        const overflow = Math.max(0, firstCascadeCells - firstCascadeLimit)
+          + Math.max(0, maxCascadeCells - cascadeLimit);
         Object.assign(board, {
           generationAttempts: attempt + 1,
           cascadeLimit,
-          firstCascadeCells: firstCascadeGroup?.length || 0,
+          firstCascadeCells,
+          firstCascadeLimit,
           maxCascadeCells
         });
-        if (maxCascadeCells < bestCascade) {
+        if (overflow < bestOverflow || (overflow === bestOverflow && maxCascadeCells < bestCascade)) {
           bestBoard = board;
+          bestOverflow = overflow;
           bestCascade = maxCascadeCells;
         }
-        if (maxCascadeCells <= cascadeLimit) return board;
+        if (firstCascadeCells <= firstCascadeLimit && maxCascadeCells <= cascadeLimit) return board;
       }
       return bestBoard;
     }
@@ -1902,6 +1911,8 @@
         floor: game.floor,
         firstIndex,
         ...evaluation,
+        firstCascadeLimit: board.firstCascadeLimit,
+        firstOpenRatio: evaluation.firstOpenCount / board.safeCount,
         maxCascadeCells: board.maxCascadeCells,
         cascadeLimit: board.cascadeLimit,
         boardGenerationAttempts: board.generationAttempts,
@@ -1915,6 +1926,8 @@
       Object.assign(game.currentStats, {
         target: game.target,
         firstOpenCount: evaluation.firstOpenCount,
+        firstCascadeLimit: board.firstCascadeLimit,
+        firstOpenRatio: evaluation.firstOpenCount / board.safeCount,
         maxCascadeCells: board.maxCascadeCells,
         cascadeLimit: board.cascadeLimit,
         boardGenerationAttempts: board.generationAttempts,
@@ -2723,7 +2736,7 @@
         return `<div class="debug-floor">
           <strong>F${stats.floor} · ${stats.result} · ${stats.durationSeconds.toFixed(1)}s</strong><br>
           score=${stats.score} grade=${stats.grade} maxCombo=${stats.maxCombo} frenzyBase=${stats.frenzyBaseSeconds}s<br>
-          economy: first=${stats.firstOpenCount} cascade=${stats.maxCascadeCells}/${stats.cascadeLimit} attempts=${stats.boardGenerationAttempts} potential=${stats.potential}/${stats.referencePotential} raw=${Number(stats.rawSeedIndex).toFixed(3)} quota=${Number(stats.seedIndex).toFixed(3)} target=${stats.target ?? "SCAN"} market=×${Number(stats.marketIndex).toFixed(3)} eval=${Number(stats.economyEvalMs).toFixed(1)}ms<br>
+          economy: first=${stats.firstOpenCount}/${stats.firstCascadeLimit} (${(Number(stats.firstOpenRatio || 0) * 100).toFixed(1)}%) cascade=${stats.maxCascadeCells}/${stats.cascadeLimit} attempts=${stats.boardGenerationAttempts} potential=${stats.potential}/${stats.referencePotential} raw=${Number(stats.rawSeedIndex).toFixed(3)} quota=${Number(stats.seedIndex).toFixed(3)} target=${stats.target ?? "SCAN"} market=×${Number(stats.marketIndex).toFixed(3)} eval=${Number(stats.economyEvalMs).toFixed(1)}ms<br>
           breaks=${stats.comboBreaks} mines=${stats.minesHit}<br>
           ${CONFIG.momentum.enabled ? `momentum: earned=${(Number(stats.momentumEarnedMs || 0) / 1000).toFixed(1)}s spent=${(Number(stats.momentumSpentMs || 0) / 1000).toFixed(1)}s saves=${stats.momentumSaves || 0} hardBreaks=${stats.momentumHardBreaks || 0}<br>` : ""}
           gold: base ${formatEffectNumber(b.base)} / mult +${formatEffectNumber(b.multiplier)} / frenzy +${formatEffectNumber(b.frenzy)} / finger +${formatEffectNumber(b.goldenFinger)} / piggy +${formatEffectNumber(b.piggyBank)}<br>
