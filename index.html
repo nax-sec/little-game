@@ -239,7 +239,7 @@
     }
 
     .score-bar > i,
-    .combo-bar > i {
+    .combo-fill {
       display: block;
       width: 0;
       height: 100%;
@@ -280,17 +280,50 @@
     .combo-state { min-width: 74px; color: var(--muted); text-align: right; }
     .combo-state.hot { color: var(--acid); }
     .combo-state.frozen { color: var(--blue); }
+    .combo-state.momentum { color: var(--amber); text-shadow: 0 0 12px rgba(255,184,63,.24); }
 
     .combo-bar {
+      position: relative;
       height: 8px;
       overflow: hidden;
       border-radius: 99px;
       background: #101619;
       box-shadow: inset 0 0 0 1px #263238;
+      transition: border-color .14s, box-shadow .14s;
     }
 
-    .combo-bar > i.danger { background: linear-gradient(90deg, var(--danger), var(--amber)); box-shadow: 0 0 13px var(--danger); }
-    .combo-bar > i.frozen { background: linear-gradient(90deg, var(--blue), #c2edff); box-shadow: 0 0 13px var(--blue); }
+    .combo-fill {
+      position: absolute;
+      inset: 0 auto 0 0;
+      z-index: 1;
+    }
+
+    .momentum-fill {
+      position: absolute;
+      left: 0;
+      bottom: 0;
+      z-index: 2;
+      display: block;
+      width: 0;
+      height: 2px;
+      border-radius: 99px;
+      background: linear-gradient(90deg, #ff8e2b, var(--amber), #ffe17a);
+      box-shadow: 0 0 10px rgba(255,184,63,.72);
+      transition: width .12s linear, height .14s ease, filter .14s ease;
+    }
+
+    .combo-bar.burning {
+      box-shadow: inset 0 0 0 1px rgba(255,184,63,.58), 0 0 15px rgba(255,184,63,.16);
+    }
+
+    .combo-bar.burning .momentum-fill {
+      height: 100%;
+      animation: momentumBurn .55s ease-in-out infinite alternate;
+    }
+
+    .combo-fill.danger { background: linear-gradient(90deg, var(--danger), var(--amber)); box-shadow: 0 0 13px var(--danger); }
+    .combo-fill.frozen { background: linear-gradient(90deg, var(--blue), #c2edff); box-shadow: 0 0 13px var(--blue); }
+    .combo-bar.frozen .momentum-fill { filter: saturate(.55) brightness(1.35); animation-play-state: paused; }
 
     .play-layout {
       display: grid;
@@ -431,6 +464,28 @@
     }
 
     .cell.revealed:hover.numbered { border-color: #3d5156; background: #10191c; cursor: pointer; }
+    .cell.revealed.numbered.chord-ready {
+      z-index: 2;
+      border-color: rgba(217,255,67,.72);
+      background: radial-gradient(circle at 74% 24%, rgba(217,255,67,.13), transparent 45%), #10191c;
+      box-shadow: inset 0 0 0 1px rgba(217,255,67,.08), 0 0 10px rgba(217,255,67,.13);
+      cursor: pointer;
+      animation: chordReadyPulse 1s ease-in-out infinite alternate;
+    }
+
+    .cell.revealed.numbered.chord-ready::after {
+      content: "";
+      position: absolute;
+      top: max(2px, 10%);
+      right: max(2px, 10%);
+      width: clamp(2px, 12%, 5px);
+      aspect-ratio: 1;
+      border-radius: 50%;
+      background: var(--acid);
+      box-shadow: 0 0 7px 2px rgba(217,255,67,.55);
+    }
+
+    .cell.revealed.numbered.chord-ready:hover { border-color: var(--acid); background-color: #142023; }
     .cell.flagged { color: var(--amber); text-shadow: 0 0 10px rgba(255,184,63,.42); }
     .cell.exploded { border-color: var(--danger); background: #32131b; color: #fff; text-shadow: 0 0 14px var(--danger); }
     .cell.game-over-mine { color: #aa777f; background: #1a1013; }
@@ -844,6 +899,8 @@
     }
     @keyframes cellDenied { 20%, 70% { transform: translateX(-3px); } 45%, 90% { transform: translateX(3px); } }
     @keyframes hintPulse { 50% { box-shadow: 0 0 0 2px rgba(85,242,194,.22), 0 0 17px rgba(85,242,194,.38); filter: brightness(1.22); } }
+    @keyframes chordReadyPulse { to { filter: brightness(1.13); box-shadow: inset 0 0 0 1px rgba(217,255,67,.13), 0 0 15px rgba(217,255,67,.22); } }
+    @keyframes momentumBurn { to { filter: brightness(1.28); box-shadow: 0 0 14px rgba(255,184,63,.9); } }
     @keyframes targetFlash { 35% { box-shadow: 0 0 35px rgba(217,255,67,.35), inset 0 0 20px rgba(217,255,67,.12); transform: translateY(-2px); } }
     @keyframes gradeS { to { box-shadow: 0 0 55px rgba(217,255,67,.34), inset 0 0 30px rgba(217,255,67,.15); transform: rotate(4deg) scale(1.04); } }
     @keyframes toastIn { 0%,100% { opacity: 0; transform: translate(-50%,12px); } 12%,82% { opacity: 1; transform: translate(-50%,0); } }
@@ -961,8 +1018,11 @@
     </section>
 
     <div class="combo-strip">
-      <span class="combo-strip-label">Chain decay</span>
-      <div class="combo-bar"><i id="combo-fill"></i></div>
+      <span class="combo-strip-label" id="combo-strip-label">Chain / Momentum</span>
+      <div class="combo-bar" id="combo-bar" aria-label="连击计时与余势">
+        <i class="combo-fill" id="combo-fill"></i>
+        <i class="momentum-fill" id="momentum-fill"></i>
+      </div>
       <span class="combo-state" id="combo-state">待机</span>
     </div>
 
@@ -1010,7 +1070,7 @@
           <div class="panel-head"><h2 class="panel-title">现场规程</h2></div>
           <ul class="rules-list">
             <li><b>01</b><span>电脑左键翻开、右键插旗；手机轻点翻开、按住插旗。点击已开的数字执行 chord。</span></li>
-            <li><b>02</b><span>每次安全翻格回满连击条；狂热从 15 秒逐层收紧，最低 10 秒。</span></li>
+            <li><b>02</b><span id="rhythm-rule">快速安全翻格积攒余势；基础计时耗尽后自动救链，狂热最低收紧至 10 秒。</span></li>
             <li><b>03</b><span>首击扫描矿区潜力，随后锁定本层动态配额与补给行情。</span></li>
             <li><b>04</b><span>踩雷不立刻结束，但会扣除 HP 并打断狂热。</span></li>
           </ul>
@@ -1079,7 +1139,7 @@
 
     // 所有会影响平衡的数值只允许出现在 CONFIG 内。
     const CONFIG = Object.freeze({
-      version: "0.4.1",
+      version: "0.5.0",
       board: {
         baseSide: 9,
         maxSide: 16,
@@ -1098,6 +1158,14 @@
           { at: 25, value: 3 },
           { at: 50, value: 5 }
         ]
+      },
+      momentum: {
+        enabled: true,
+        capacitySeconds: 3,
+        gainPerSafeCellSeconds: 0.4,
+        gainPerActionCapSeconds: 0.8,
+        frenzyDrainRate: 0.5,
+        readyChordCue: true
       },
       frenzy: {
         threshold: 30,
@@ -1191,8 +1259,12 @@
       scoreRatio: $("#score-ratio"),
       scoreFill: $("#score-fill"),
       scoreCard: $("#score-card"),
+      comboStripLabel: $("#combo-strip-label"),
+      comboBar: $("#combo-bar"),
       comboFill: $("#combo-fill"),
+      momentumFill: $("#momentum-fill"),
       comboState: $("#combo-state"),
+      rhythmRule: $("#rhythm-rule"),
       boardSize: $("#board-size"),
       flagCount: $("#flag-count"),
       seed: $("#seed-chip"),
@@ -1422,6 +1494,8 @@
         gold: 0,
         combo: 0,
         comboRemainingMs: 0,
+        momentumRemainingMs: 0,
+        momentumBurning: false,
         freezeRemainingMs: 0,
         frenzyActive: false,
         frenzyRemainingMs: 0,
@@ -1481,6 +1555,8 @@
       game.flags = 0;
       game.combo = 0;
       game.comboRemainingMs = 0;
+      game.momentumRemainingMs = 0;
+      game.momentumBurning = false;
       game.freezeRemainingMs = 0;
       game.frenzyActive = false;
       game.frenzyRemainingMs = 0;
@@ -1497,6 +1573,10 @@
         result: "进行中",
         comboBreaks: 0,
         maxCombo: 0,
+        momentumEarnedMs: 0,
+        momentumSpentMs: 0,
+        momentumSaves: 0,
+        momentumHardBreaks: 0,
         minesHit: 0,
         score: 0,
         grade: "—",
@@ -1794,6 +1874,67 @@
       return (CONFIG.combo.durationSeconds + slowFuse) * 1000;
     }
 
+    function momentumCapacityMs() {
+      return CONFIG.momentum.enabled ? CONFIG.momentum.capacitySeconds * 1000 : 0;
+    }
+
+    function isMomentumBurning() {
+      return Boolean(
+        CONFIG.momentum.enabled
+        && game?.combo > 0
+        && game.comboRemainingMs <= 0
+        && game.momentumRemainingMs > 0
+      );
+    }
+
+    function clearMomentum() {
+      if (!game) return;
+      game.momentumRemainingMs = 0;
+      game.momentumBurning = false;
+    }
+
+    function earnMomentumForAction(safeCellCount, eligible) {
+      if (!CONFIG.momentum.enabled || !eligible || safeCellCount <= 0) return 0;
+      const capacityMs = momentumCapacityMs();
+      const requestedMs = Math.min(
+        safeCellCount * CONFIG.momentum.gainPerSafeCellSeconds,
+        CONFIG.momentum.gainPerActionCapSeconds
+      ) * 1000;
+      const before = game.momentumRemainingMs;
+      game.momentumRemainingMs = Math.min(capacityMs, before + requestedMs);
+      const earnedMs = game.momentumRemainingMs - before;
+      if (game.currentStats) game.currentStats.momentumEarnedMs += earnedMs;
+      return earnedMs;
+    }
+
+    function consumeComboClock(deltaMs) {
+      let remainingMs = Math.max(0, deltaMs);
+      let momentumSpentMs = 0;
+
+      if (game.comboRemainingMs > 0 && remainingMs > 0) {
+        const baseSpentMs = Math.min(game.comboRemainingMs, remainingMs);
+        game.comboRemainingMs = Math.max(0, game.comboRemainingMs - baseSpentMs);
+        remainingMs -= baseSpentMs;
+      }
+
+      if (remainingMs > 0 && CONFIG.momentum.enabled && game.momentumRemainingMs > 0) {
+        if (!game.momentumBurning) {
+          game.momentumBurning = true;
+          if (game.currentStats) game.currentStats.momentumSaves += 1;
+        }
+        momentumSpentMs = Math.min(game.momentumRemainingMs, remainingMs);
+        game.momentumRemainingMs = Math.max(0, game.momentumRemainingMs - momentumSpentMs);
+        remainingMs -= momentumSpentMs;
+        if (game.currentStats) game.currentStats.momentumSpentMs += momentumSpentMs;
+      }
+
+      if (game.comboRemainingMs <= 0 && (!CONFIG.momentum.enabled || game.momentumRemainingMs <= 0)) {
+        resetCombo("timeout");
+        return { broke: true, momentumSpentMs };
+      }
+      return { broke: false, momentumSpentMs };
+    }
+
     function baseFrenzyDurationSeconds(floor = game.floor) {
       return Math.max(
         CONFIG.frenzy.durationStartSeconds - CONFIG.frenzy.durationDecayPerFloor * (floor - 1),
@@ -1841,6 +1982,16 @@
       resolveReveal([index], "click");
     }
 
+    function isChordReady(index) {
+      if (!CONFIG.momentum.enabled || !CONFIG.momentum.readyChordCue) return false;
+      const cell = game.cells[index];
+      if (!cell?.revealed || cell.exploded || cell.adjacent <= 0) return false;
+      const adjacent = neighbors(index);
+      const confirmed = adjacent.filter(next => game.cells[next].flagged || game.cells[next].exploded).length;
+      const covered = adjacent.filter(next => !game.cells[next].revealed && !game.cells[next].flagged && !game.cells[next].exploded).length;
+      return covered > 0 && confirmed === cell.adjacent;
+    }
+
     function attemptChord(index) {
       if (game.mode !== "playing") return;
       const cell = game.cells[index];
@@ -1865,6 +2016,7 @@
     function resolveReveal(seedIndices, source) {
       const result = collectReveal(seedIndices);
       if (!result.safe.length && !result.mines.length) return;
+      const momentumEarnEligible = result.mines.length === 0 && !isMomentumBurning();
 
       if (result.mines.length) {
         resolveMineHits(result.mines, source);
@@ -1887,6 +2039,7 @@
         const reward = awardSafeCell();
         opened.push({ ...entry, reward, combo: game.combo });
       }
+      earnMomentumForAction(opened.length, momentumEarnEligible);
       resolveIntuitionAfterSafeOpen(opened.map(entry => entry.index), hintIndexBefore);
       renderBoard(opened, result.mines);
       renderAll(false);
@@ -1910,6 +2063,7 @@
       game.currentStats.minesHit += hitCount;
       game.hp = Math.max(0, game.hp - hitCount);
       endFrenzy();
+      clearMomentum();
 
       if (game.combo > 0) {
         const insuranceLevel = game.items.insurance;
@@ -1945,6 +2099,7 @@
       const previousCombo = game.combo;
       game.combo += 1;
       game.comboRemainingMs = comboDurationMs();
+      game.momentumBurning = false;
       game.flagRefreshUsedSinceSafe = false;
       game.runHighestCombo = Math.max(game.runHighestCombo, game.combo);
       game.currentStats.maxCombo = Math.max(game.currentStats.maxCombo, game.combo);
@@ -2005,8 +2160,10 @@
 
     function resetCombo(reason) {
       if (game.combo > 0 && (reason === "timeout" || reason === "mine")) game.currentStats.comboBreaks += 1;
+      if (CONFIG.momentum.enabled && game.combo > 0 && reason === "timeout") game.currentStats.momentumHardBreaks += 1;
       game.combo = 0;
       game.comboRemainingMs = 0;
+      clearMomentum();
       game.freezeRemainingMs = 0;
       game.frenzyTriggeredChain = false;
       endFrenzy();
@@ -2023,6 +2180,7 @@
       if (cell.flagged) {
         if (game.combo > 0 && !game.flagRefreshUsedSinceSafe) {
           game.comboRemainingMs = Math.max(game.comboRemainingMs, comboDurationMs() * CONFIG.combo.flagRefillRatio);
+          if (game.comboRemainingMs > 0) game.momentumBurning = false;
           game.flagRefreshUsedSinceSafe = true;
         }
         if (game.intuition.hintIndex === index) {
@@ -2082,6 +2240,7 @@
       game.mode = "shop";
       endFrenzy();
       game.comboRemainingMs = 0;
+      clearMomentum();
       game.freezeRemainingMs = 0;
       game.gold = roundMoney(game.gold);
       const score = roundMoney(game.floorScoreExact);
@@ -2201,6 +2360,7 @@
       game.mode = "gameover";
       endFrenzy();
       game.comboRemainingMs = 0;
+      clearMomentum();
       game.freezeRemainingMs = 0;
       game.currentStats.durationSeconds = (performance.now() - game.currentStats.startAt) / 1000;
       game.currentStats.result = "阵亡";
@@ -2245,6 +2405,7 @@
 
     function renderAll(includeBoard = true) {
       renderStats();
+      renderDynamicTimers();
       if (includeBoard) renderBoard();
       renderLoadout();
       renderHourglassButtons();
@@ -2256,6 +2417,10 @@
       dom.seed.textContent = game.economyCalibrated
         ? `SEED ${game.runSeed} · Q${Math.round(game.floorSeedIndex * 100)}`
         : `SEED ${game.runSeed} · SCAN`;
+      dom.comboStripLabel.textContent = CONFIG.momentum.enabled ? "Chain / Momentum" : "Chain decay";
+      dom.rhythmRule.textContent = CONFIG.momentum.enabled
+        ? "快速安全翻格积攒余势；基础计时耗尽后自动救链，狂热最低收紧至 10 秒。"
+        : "每次安全翻格回满连击条；狂热从 15 秒逐层收紧，最低 10 秒。";
       dom.storageState.textContent = storage.enabled ? "存档：LOCAL / 正常" : "存档：不可用 / 无存档模式";
     }
 
@@ -2279,22 +2444,46 @@
     function renderDynamicTimers() {
       const duration = comboDurationMs();
       const ratio = game.combo > 0 ? clamp(game.comboRemainingMs / duration, 0, 1) : 0;
+      const capacityMs = momentumCapacityMs();
+      const visibleMomentumMs = CONFIG.momentum.enabled ? game.momentumRemainingMs : 0;
+      const momentumRatio = capacityMs > 0 ? clamp(visibleMomentumMs / capacityMs, 0, 1) : 0;
+      const burning = isMomentumBurning();
+      const frozen = game.freezeRemainingMs > 0;
       dom.comboFill.style.width = `${ratio * 100}%`;
-      dom.comboFill.classList.toggle("danger", game.combo > 0 && ratio < .28 && game.freezeRemainingMs <= 0);
-      dom.comboFill.classList.toggle("frozen", game.freezeRemainingMs > 0);
+      dom.momentumFill.style.width = `${momentumRatio * 100}%`;
+      dom.comboFill.classList.toggle("danger", game.combo > 0 && ratio < .28 && visibleMomentumMs <= 0 && !frozen);
+      dom.comboFill.classList.toggle("frozen", frozen);
+      dom.comboBar.classList.toggle("burning", burning);
+      dom.comboBar.classList.toggle("frozen", frozen);
       dom.comboState.className = "combo-state";
-      if (game.freezeRemainingMs > 0) {
+      const baseSeconds = (Math.max(0, game.comboRemainingMs) / 1000).toFixed(1);
+      const momentumSeconds = (Math.max(0, visibleMomentumMs) / 1000).toFixed(1);
+      const frenzySeconds = (Math.max(0, game.frenzyRemainingMs) / 1000).toFixed(1);
+      if (frozen) {
         dom.comboState.classList.add("frozen");
         dom.comboState.textContent = `冻结 ${(game.freezeRemainingMs / 1000).toFixed(1)}s`;
+      } else if (burning) {
+        dom.comboState.classList.add("momentum");
+        dom.comboState.textContent = game.frenzyActive
+          ? `余势 ${momentumSeconds}s · 狂热 ${frenzySeconds}s`
+          : `余势 ${momentumSeconds}s`;
       } else if (game.frenzyActive) {
         dom.comboState.classList.add("hot");
-        dom.comboState.textContent = `狂热 ${(game.frenzyRemainingMs / 1000).toFixed(1)}s`;
+        dom.comboState.textContent = visibleMomentumMs > 0
+          ? `狂热 ${frenzySeconds}s · 余 ${momentumSeconds}s`
+          : `狂热 ${frenzySeconds}s`;
       } else if (game.combo > 0) {
         dom.comboState.classList.add("hot");
-        dom.comboState.textContent = `${(game.comboRemainingMs / 1000).toFixed(1)}s`;
+        dom.comboState.textContent = visibleMomentumMs > 0
+          ? `${baseSeconds}s · 余 ${momentumSeconds}s`
+          : `${baseSeconds}s`;
       } else {
         dom.comboState.textContent = "待机";
       }
+      const ariaParts = [`基础计时 ${baseSeconds} 秒`];
+      if (CONFIG.momentum.enabled) ariaParts.push(`余势 ${momentumSeconds} 秒`);
+      if (game.frenzyActive) ariaParts.push(`狂热 ${frenzySeconds} 秒`);
+      dom.comboBar.setAttribute("aria-label", ariaParts.join("，"));
     }
 
     function renderBoard(opened = [], exploded = []) {
@@ -2313,6 +2502,7 @@
             classes.push("exploded"); text = "✹"; label += "，已爆炸的雷";
           } else if (cell.adjacent > 0) {
             classes.push("numbered", `n${cell.adjacent}`); text = String(cell.adjacent); label += `，数字 ${cell.adjacent}`;
+            if (isChordReady(index)) { classes.push("chord-ready"); label += "，可以连锁翻开"; }
           } else label += "，空白安全格";
         } else if (cell.flagged) {
           classes.push("flagged"); text = "⚑"; label += "，已插旗";
@@ -2423,6 +2613,7 @@
           score=${stats.score} grade=${stats.grade} maxCombo=${stats.maxCombo} frenzyBase=${stats.frenzyBaseSeconds}s<br>
           economy: first=${stats.firstOpenCount} potential=${stats.potential}/${stats.referencePotential} raw=${Number(stats.rawSeedIndex).toFixed(3)} quota=${Number(stats.seedIndex).toFixed(3)} target=${stats.target ?? "SCAN"} market=×${Number(stats.marketIndex).toFixed(3)} eval=${Number(stats.economyEvalMs).toFixed(1)}ms<br>
           breaks=${stats.comboBreaks} mines=${stats.minesHit}<br>
+          ${CONFIG.momentum.enabled ? `momentum: earned=${(Number(stats.momentumEarnedMs || 0) / 1000).toFixed(1)}s spent=${(Number(stats.momentumSpentMs || 0) / 1000).toFixed(1)}s saves=${stats.momentumSaves || 0} hardBreaks=${stats.momentumHardBreaks || 0}<br>` : ""}
           gold: base ${formatEffectNumber(b.base)} / mult +${formatEffectNumber(b.multiplier)} / frenzy +${formatEffectNumber(b.frenzy)} / finger +${formatEffectNumber(b.goldenFinger)} / piggy +${formatEffectNumber(b.piggyBank)}<br>
           buys: ${stats.purchases.length ? stats.purchases.join(" | ") : "—"}
         </div>`;
@@ -2557,19 +2748,21 @@
       lastTick = now;
       if (game && game.mode === "playing" && !document.hidden) {
         const touchDelta = touchTimingProtected(now) ? 0 : delta;
+        let momentumSpentMs = 0;
         if (game.combo > 0) {
           if (game.freezeRemainingMs > 0) game.freezeRemainingMs = Math.max(0, game.freezeRemainingMs - delta);
           else {
-            game.comboRemainingMs -= touchDelta;
-            if (game.comboRemainingMs <= 0) {
-              resetCombo("timeout");
+            const clockResult = consumeComboClock(touchDelta);
+            momentumSpentMs = clockResult.momentumSpentMs;
+            if (clockResult.broke) {
               renderStats();
               renderHourglassButtons();
             }
           }
         }
         if (game.frenzyActive) {
-          game.frenzyRemainingMs -= touchDelta;
+          const frenzyDelta = touchDelta - momentumSpentMs * (1 - CONFIG.momentum.frenzyDrainRate);
+          game.frenzyRemainingMs -= frenzyDelta;
           if (game.frenzyRemainingMs <= 0) endFrenzy();
         }
         if (game.items.intuition && game.boardGenerated && game.intuition.armed && game.intuition.hintIndex === null) {
