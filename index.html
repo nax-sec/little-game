@@ -1139,14 +1139,16 @@
 
     // 所有会影响平衡的数值只允许出现在 CONFIG 内。
     const CONFIG = Object.freeze({
-      version: "0.5.0",
+      version: "0.5.1",
       board: {
         baseSide: 9,
         maxSide: 16,
         baseMineRate: 0.15,
         mineRateStep: 0.005,
         maxMineRate: 0.22,
-        firstSafeRadius: 1
+        firstSafeRadius: 1,
+        maxCascadeSideMultiplier: 2,
+        maxGenerationAttempts: 256
       },
       hp: { max: 3 },
       combo: {
@@ -1195,7 +1197,7 @@
         marketElasticity: 0.6,
         marketIndexMin: 1.05,
         marketIndexMax: 1.5,
-        referencePotential: [0, 534, 669, 819, 954, 1109, 1259, 1409, 1364, 1344, 1314, 1284, 1249, 1214, 1209, 1189]
+        referencePotential: [0, 519, 639, 774, 899, 1069, 1189, 1309, 1284, 1254, 1219, 1224, 1199, 1204, 1184, 1154]
       },
       shop: {
         normalSlots: 3,
@@ -1206,13 +1208,13 @@
         healGrowth: 1.25
       },
       items: {
-        hourglass: { name: "沙漏", icon: "⌛", basePrice: 120, baseEffect: 5, growth: 1.1, charges: 3 },
-        slowFuse: { name: "慢燃引信", icon: "≈", basePrice: 150, baseEffect: 1, growth: 1.1 },
-        insurance: { name: "保险丝", icon: "⌁", basePrice: 140, baseEffect: 0.5, growth: 1.1, cap: 0.95 },
-        intuition: { name: "直觉", icon: "◎", basePrice: 130, baseEffect: 2, growth: 0.9, floor: 0.5 },
-        frenzyExtend: { name: "狂热延长", icon: "✦", basePrice: 130, baseEffect: 5, growth: 1.1 },
-        goldenFinger: { name: "金手指", icon: "+", basePrice: 120, baseEffect: 2, growth: 1.1, comboThreshold: 10 },
-        piggyBank: { name: "存钱罐", icon: "¤", basePrice: 100, baseEffect: 20, growth: 1.1, milestones: [25, 50, 100] }
+        hourglass: { name: "沙漏", icon: "⌛", basePrice: 120, baseEffect: 4, growth: 1.1, charges: 2 },
+        slowFuse: { name: "慢燃引信", icon: "≈", basePrice: 150, baseEffect: 0.6, growth: 1.1 },
+        insurance: { name: "保险丝", icon: "⌁", basePrice: 140, baseEffect: 0.35, growth: 1.1, cap: 0.7 },
+        intuition: { name: "直觉", icon: "◎", basePrice: 130, baseEffect: 1.5, growth: 0.9, floor: 0.75 },
+        frenzyExtend: { name: "狂热延长", icon: "✦", basePrice: 130, baseEffect: 3, growth: 1.1 },
+        goldenFinger: { name: "金手指", icon: "+", basePrice: 120, baseEffect: 0.5, growth: 1.1, comboThreshold: 10 },
+        piggyBank: { name: "存钱罐", icon: "¤", basePrice: 100, baseEffect: 10, growth: 1.1, milestones: [25, 50, 100] }
       },
       animation: {
         waveDelayMs: 20,
@@ -1584,6 +1586,9 @@
         baseTarget: game.baseTarget,
         target: null,
         firstOpenCount: 0,
+        maxCascadeCells: 0,
+        cascadeLimit: 0,
+        boardGenerationAttempts: 0,
         potential: 0,
         referencePotential: 0,
         rawSeedIndex: 1,
@@ -1640,7 +1645,11 @@
       return cellNeighbors(index, game.side);
     }
 
-    function createSeedBoard(runSeed, floor, firstIndex) {
+    function maxCascadeCellsForSide(side) {
+      return Math.round(side * CONFIG.board.maxCascadeSideMultiplier);
+    }
+
+    function createBoardCandidate(runSeed, floor, firstIndex, attempt) {
       const side = floorSide(floor);
       const totalCells = side * side;
       const mineRate = floorMineRate(floor);
@@ -1656,12 +1665,39 @@
         if (!inSafeZone) candidates.push(index);
       }
       const cells = Array.from({ length: totalCells }, () => ({ mine: false, adjacent: 0 }));
-      const mineIndices = shuffled(candidates, boardSeed(runSeed, floor, firstIndex)).slice(0, mineCount);
+      const rng = attempt === 0
+        ? boardSeed(runSeed, floor, firstIndex)
+        : scopedSeededRng(runSeed, "board-reroll", floor, firstIndex, attempt);
+      const mineIndices = shuffled(candidates, rng).slice(0, mineCount);
       for (const index of mineIndices) cells[index].mine = true;
       for (let index = 0; index < totalCells; index += 1) {
         if (!cells[index].mine) cells[index].adjacent = cellNeighbors(index, side).filter(next => cells[next].mine).length;
       }
       return { runSeed, floor, firstIndex, side, totalCells, mineCount, safeCount, cells };
+    }
+
+    function createSeedBoard(runSeed, floor, firstIndex) {
+      const side = floorSide(floor);
+      const cascadeLimit = maxCascadeCellsForSide(side);
+      let bestBoard = null;
+      let bestCascade = Infinity;
+
+      for (let attempt = 0; attempt < CONFIG.board.maxGenerationAttempts; attempt += 1) {
+        const board = createBoardCandidate(runSeed, floor, firstIndex, attempt);
+        const groups = buildBenchmarkRevealGroups(board);
+        const maxCascadeCells = groups.reduce((largest, group) => Math.max(largest, group?.length || 0), 0);
+        Object.assign(board, {
+          generationAttempts: attempt + 1,
+          cascadeLimit,
+          maxCascadeCells
+        });
+        if (maxCascadeCells < bestCascade) {
+          bestBoard = board;
+          bestCascade = maxCascadeCells;
+        }
+        if (maxCascadeCells <= cascadeLimit) return board;
+      }
+      return bestBoard;
     }
 
     function buildBenchmarkRevealGroups(board) {
@@ -1814,6 +1850,9 @@
         floor: game.floor,
         firstIndex,
         ...evaluation,
+        maxCascadeCells: board.maxCascadeCells,
+        cascadeLimit: board.cascadeLimit,
+        boardGenerationAttempts: board.generationAttempts,
         referencePotential,
         rawSeedIndex,
         seedIndex,
@@ -1824,6 +1863,9 @@
       Object.assign(game.currentStats, {
         target: game.target,
         firstOpenCount: evaluation.firstOpenCount,
+        maxCascadeCells: board.maxCascadeCells,
+        cascadeLimit: board.cascadeLimit,
+        boardGenerationAttempts: board.generationAttempts,
         potential: evaluation.potential,
         referencePotential,
         rawSeedIndex,
@@ -2209,7 +2251,14 @@
     }
 
     function triggerIntuitionHint() {
-      if (!game.items.intuition || !game.boardGenerated || !game.intuition.armed || game.intuition.hintIndex !== null) return;
+      if (
+        !game.items.intuition
+        || !game.boardGenerated
+        || !game.intuition.armed
+        || game.intuition.hintIndex !== null
+        || game.freezeRemainingMs > 0
+        || !isMomentumBurning()
+      ) return;
       const candidates = game.cells
         .map((cell, index) => ({ cell, index }))
         .filter(({ cell }) => !cell.mine && !cell.revealed && !cell.flagged)
@@ -2221,7 +2270,7 @@
       game.intuition.armed = false;
       game.intuition.idleMs = 0;
       renderBoard();
-      showToast("直觉捕捉到一处安全脉冲", "info");
+      showToast("余势直觉捕捉到一处安全脉冲", "info");
     }
 
     function useHourglass() {
@@ -2391,7 +2440,7 @@
       if (key === "hourglass") return `冻结 ${formatEffectNumber(effect)}s · 剩余 ${game.hourglassCharges} 次`;
       if (key === "slowFuse") return `计时条 +${formatEffectNumber(effect)}s`;
       if (key === "insurance") return `每层一次 · 保留 ${Math.round(effect * 100)}%`;
-      if (key === "intuition") return `停手 ${formatEffectNumber(effect)}s 后提示`;
+      if (key === "intuition") return `余势燃烧 ${formatEffectNumber(effect)}s 后提示`;
       if (key === "frenzyExtend") return `狂热 +${formatEffectNumber(effect)}s`;
       if (key === "goldenFinger") return `Combo >${CONFIG.items.goldenFinger.comboThreshold} 每格 +${formatEffectNumber(effect)}`;
       if (key === "piggyBank") return `里程碑各 +${formatEffectNumber(effect)}`;
@@ -2611,7 +2660,7 @@
         return `<div class="debug-floor">
           <strong>F${stats.floor} · ${stats.result} · ${stats.durationSeconds.toFixed(1)}s</strong><br>
           score=${stats.score} grade=${stats.grade} maxCombo=${stats.maxCombo} frenzyBase=${stats.frenzyBaseSeconds}s<br>
-          economy: first=${stats.firstOpenCount} potential=${stats.potential}/${stats.referencePotential} raw=${Number(stats.rawSeedIndex).toFixed(3)} quota=${Number(stats.seedIndex).toFixed(3)} target=${stats.target ?? "SCAN"} market=×${Number(stats.marketIndex).toFixed(3)} eval=${Number(stats.economyEvalMs).toFixed(1)}ms<br>
+          economy: first=${stats.firstOpenCount} cascade=${stats.maxCascadeCells}/${stats.cascadeLimit} attempts=${stats.boardGenerationAttempts} potential=${stats.potential}/${stats.referencePotential} raw=${Number(stats.rawSeedIndex).toFixed(3)} quota=${Number(stats.seedIndex).toFixed(3)} target=${stats.target ?? "SCAN"} market=×${Number(stats.marketIndex).toFixed(3)} eval=${Number(stats.economyEvalMs).toFixed(1)}ms<br>
           breaks=${stats.comboBreaks} mines=${stats.minesHit}<br>
           ${CONFIG.momentum.enabled ? `momentum: earned=${(Number(stats.momentumEarnedMs || 0) / 1000).toFixed(1)}s spent=${(Number(stats.momentumSpentMs || 0) / 1000).toFixed(1)}s saves=${stats.momentumSaves || 0} hardBreaks=${stats.momentumHardBreaks || 0}<br>` : ""}
           gold: base ${formatEffectNumber(b.base)} / mult +${formatEffectNumber(b.multiplier)} / frenzy +${formatEffectNumber(b.frenzy)} / finger +${formatEffectNumber(b.goldenFinger)} / piggy +${formatEffectNumber(b.piggyBank)}<br>
@@ -2766,8 +2815,12 @@
           if (game.frenzyRemainingMs <= 0) endFrenzy();
         }
         if (game.items.intuition && game.boardGenerated && game.intuition.armed && game.intuition.hintIndex === null) {
-          game.intuition.idleMs += delta;
-          if (game.intuition.idleMs >= itemEffect("intuition") * 1000) triggerIntuitionHint();
+          if (game.freezeRemainingMs <= 0 && isMomentumBurning()) {
+            game.intuition.idleMs += touchDelta;
+            if (game.intuition.idleMs >= itemEffect("intuition") * 1000) triggerIntuitionHint();
+          } else {
+            game.intuition.idleMs = 0;
+          }
         }
         renderDynamicTimers();
         renderHourglassButtons();
