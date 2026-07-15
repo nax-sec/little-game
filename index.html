@@ -227,6 +227,30 @@
     .gold-value { color: var(--amber); }
     .combo-value { color: var(--acid); text-shadow: 0 0 18px rgba(217,255,67,.18); }
 
+    .combo-metric-row {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .combo-record {
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+      padding-bottom: 2px;
+      color: var(--muted);
+      font: 750 .55rem/1 var(--mono);
+      letter-spacing: .09em;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .combo-record strong { color: var(--paper); font-size: .82rem; letter-spacing: -.03em; }
+    .combo-record[hidden] { display: none; }
+
     .score-bar {
       position: relative;
       z-index: 1;
@@ -262,9 +286,7 @@
 
     .combo-strip {
       display: grid;
-      grid-template-columns: auto 1fr auto;
-      align-items: center;
-      gap: 12px;
+      gap: 6px;
       min-height: 34px;
       margin-bottom: 12px;
       padding: 7px 12px;
@@ -276,13 +298,45 @@
       text-transform: uppercase;
     }
 
+    .rhythm-row {
+      display: grid;
+      grid-template-columns: 150px minmax(80px, 1fr) 170px;
+      align-items: center;
+      gap: 12px;
+      min-height: 20px;
+    }
+
+    .rhythm-row + .rhythm-row {
+      padding-top: 6px;
+      border-top: 1px solid rgba(255,255,255,.055);
+    }
+
+    .momentum-row[hidden] { display: none; }
     .combo-strip-label { color: var(--muted); }
+    .momentum-label { color: var(--amber); }
     .combo-state { min-width: 74px; color: var(--muted); text-align: right; }
     .combo-state.hot { color: var(--acid); }
     .combo-state.frozen { color: var(--blue); }
     .combo-state.momentum { color: var(--amber); text-shadow: 0 0 12px rgba(255,184,63,.24); }
 
-    .combo-bar {
+    .momentum-state {
+      color: var(--amber);
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    .momentum-state.burning { color: #ffe17a; text-shadow: 0 0 13px rgba(255,184,63,.48); }
+    .momentum-state.frozen { color: var(--blue); }
+
+    .momentum-row.burning {
+      margin: 0 -6px -1px;
+      padding-inline: 6px;
+      border-radius: 5px;
+      background: linear-gradient(90deg, rgba(255,184,63,.08), transparent 72%);
+    }
+
+    .combo-bar,
+    .momentum-bar {
       position: relative;
       height: 8px;
       overflow: hidden;
@@ -299,31 +353,26 @@
     }
 
     .momentum-fill {
-      position: absolute;
-      left: 0;
-      bottom: 0;
-      z-index: 2;
       display: block;
       width: 0;
-      height: 2px;
+      height: 100%;
       border-radius: 99px;
       background: linear-gradient(90deg, #ff8e2b, var(--amber), #ffe17a);
       box-shadow: 0 0 10px rgba(255,184,63,.72);
-      transition: width .12s linear, height .14s ease, filter .14s ease;
+      transition: width .12s linear, filter .14s ease;
     }
 
-    .combo-bar.burning {
+    .momentum-bar.burning {
       box-shadow: inset 0 0 0 1px rgba(255,184,63,.58), 0 0 15px rgba(255,184,63,.16);
     }
 
-    .combo-bar.burning .momentum-fill {
-      height: 100%;
+    .momentum-bar.burning .momentum-fill {
       animation: momentumBurn .55s ease-in-out infinite alternate;
     }
 
     .combo-fill.danger { background: linear-gradient(90deg, var(--danger), var(--amber)); box-shadow: 0 0 13px var(--danger); }
     .combo-fill.frozen { background: linear-gradient(90deg, var(--blue), #c2edff); box-shadow: 0 0 13px var(--blue); }
-    .combo-bar.frozen .momentum-fill { filter: saturate(.55) brightness(1.35); animation-play-state: paused; }
+    .momentum-bar.frozen .momentum-fill { filter: saturate(.55) brightness(1.35); animation-play-state: paused; }
 
     .play-layout {
       display: grid;
@@ -486,6 +535,31 @@
     }
 
     .cell.revealed.numbered.chord-ready:hover { border-color: var(--acid); background-color: #142023; }
+
+    .cell.inferred-mine:not(.revealed):not(.flagged) {
+      z-index: 3;
+      border-color: rgba(255,184,63,.92);
+      background:
+        linear-gradient(135deg, rgba(255,184,63,.18), transparent 44%),
+        linear-gradient(145deg, #2d3029 0%, #20231f 56%, #151a18 100%);
+      box-shadow:
+        inset 0 0 0 1px rgba(255,184,63,.16),
+        inset 0 0 15px rgba(255,184,63,.08),
+        0 0 12px rgba(255,184,63,.24);
+      animation: inferredMinePulse .9s ease-in-out infinite alternate;
+    }
+
+    .cell.inferred-mine:not(.revealed):not(.flagged)::after {
+      content: "";
+      width: clamp(4px, 24%, 10px);
+      aspect-ratio: 1;
+      border: 1px solid var(--amber);
+      background: rgba(255,184,63,.12);
+      box-shadow: 0 0 8px rgba(255,184,63,.52);
+      transform: rotate(45deg);
+    }
+
+    .cell.inferred-mine:hover:not(.revealed):not(.flagged) { border-color: #ffe17a; filter: brightness(1.14); }
     .cell.flagged { color: var(--amber); text-shadow: 0 0 10px rgba(255,184,63,.42); }
     .cell.exploded { border-color: var(--danger); background: #32131b; color: #fff; text-shadow: 0 0 14px var(--danger); }
     .cell.game-over-mine { color: #aa777f; background: #1a1013; }
@@ -900,6 +974,7 @@
     @keyframes cellDenied { 20%, 70% { transform: translateX(-3px); } 45%, 90% { transform: translateX(3px); } }
     @keyframes hintPulse { 50% { box-shadow: 0 0 0 2px rgba(85,242,194,.22), 0 0 17px rgba(85,242,194,.38); filter: brightness(1.22); } }
     @keyframes chordReadyPulse { to { filter: brightness(1.13); box-shadow: inset 0 0 0 1px rgba(217,255,67,.13), 0 0 15px rgba(217,255,67,.22); } }
+    @keyframes inferredMinePulse { to { filter: brightness(1.1); box-shadow: inset 0 0 0 1px rgba(255,184,63,.24), inset 0 0 18px rgba(255,184,63,.11), 0 0 17px rgba(255,184,63,.31); } }
     @keyframes momentumBurn { to { filter: brightness(1.28); box-shadow: 0 0 14px rgba(255,184,63,.9); } }
     @keyframes targetFlash { 35% { box-shadow: 0 0 35px rgba(217,255,67,.35), inset 0 0 20px rgba(217,255,67,.12); transform: translateY(-2px); } }
     @keyframes gradeS { to { box-shadow: 0 0 55px rgba(217,255,67,.34), inset 0 0 30px rgba(217,255,67,.15); transform: rotate(4deg) scale(1.04); } }
@@ -935,9 +1010,12 @@
       .stats { grid-template-columns: repeat(2, minmax(0,1fr)); gap: 7px; }
       .stat-card { min-height: 71px; padding: 10px 12px; }
       .stat-value { margin-top: 6px; font-size: 1.28rem; }
-      .combo-strip { gap: 8px; margin-bottom: 8px; padding-inline: 9px; }
+      .combo-strip { gap: 5px; margin-bottom: 8px; padding-inline: 9px; }
       .combo-strip-label { display: none; }
-      .combo-strip { grid-template-columns: 1fr auto; }
+      .rhythm-row { grid-template-columns: minmax(70px, 1fr) auto; gap: 8px; }
+      .rhythm-row + .rhythm-row { padding-top: 5px; }
+      .combo-record { gap: 4px; font-size: .5rem; }
+      .combo-record strong { font-size: .72rem; }
       .board-panel { padding: 8px; border-radius: 12px; }
       .board-toolbar { margin-bottom: 7px; padding-inline: 4px; }
       .seed-chip { display: none; }
@@ -1008,7 +1086,10 @@
       </article>
       <article class="stat-card" id="combo-card">
         <div class="stat-label"><span>Combo / 连击</span><span id="multiplier-value">×1</span></div>
-        <div class="stat-value combo-value" id="combo-value">0</div>
+        <div class="combo-metric-row">
+          <div class="stat-value combo-value" id="combo-value">0</div>
+          <div class="combo-record" id="combo-record"><span>Run max</span><strong id="run-max-value">0</strong></div>
+        </div>
       </article>
       <article class="stat-card" id="score-card">
         <div class="stat-label"><span>Quota / 分数线</span><span id="score-ratio">0%</span></div>
@@ -1017,13 +1098,21 @@
       </article>
     </section>
 
-    <div class="combo-strip">
-      <span class="combo-strip-label" id="combo-strip-label">Chain / Momentum</span>
-      <div class="combo-bar" id="combo-bar" aria-label="连击计时与余势">
-        <i class="combo-fill" id="combo-fill"></i>
-        <i class="momentum-fill" id="momentum-fill"></i>
+    <div class="combo-strip" id="rhythm-stack">
+      <div class="rhythm-row">
+        <span class="combo-strip-label" id="combo-strip-label">Chain</span>
+        <div class="combo-bar" id="combo-bar" aria-label="连击基础计时">
+          <i class="combo-fill" id="combo-fill"></i>
+        </div>
+        <span class="combo-state" id="combo-state">待机</span>
       </div>
-      <span class="combo-state" id="combo-state">待机</span>
+      <div class="rhythm-row momentum-row" id="momentum-row">
+        <span class="combo-strip-label momentum-label">Momentum / 余势</span>
+        <div class="momentum-bar" id="momentum-bar" aria-label="余势 0 秒">
+          <i class="momentum-fill" id="momentum-fill"></i>
+        </div>
+        <span class="momentum-state" id="momentum-state">0.0 / 3.0s</span>
+      </div>
     </div>
 
     <main class="play-layout">
@@ -1040,8 +1129,8 @@
         </div>
         <div class="touch-gesture-hint" aria-label="手机操作说明">
           <b>TOUCH</b>
-          <span>轻点翻开 · 按住插旗</span>
-          <small>判定期间连击 / 狂热暂停</small>
+          <span id="touch-primary">琥珀格按住插旗 · 绿框数字轻点</span>
+          <small id="touch-detail">琥珀＝推断雷 · 绿色＝可 chord · 判定期间计时暂停</small>
         </div>
         <div class="mobile-controls">
           <div class="mode-switch" aria-label="操作模式">
@@ -1070,7 +1159,7 @@
           <div class="panel-head"><h2 class="panel-title">现场规程</h2></div>
           <ul class="rules-list">
             <li><b>01</b><span>电脑左键翻开、右键插旗；手机轻点翻开、按住插旗。点击已开的数字执行 chord。</span></li>
-            <li><b>02</b><span id="rhythm-rule">快速安全翻格积攒余势；基础计时耗尽后自动救链，狂热最低收紧至 10 秒。</span></li>
+            <li><b>02</b><span id="rhythm-rule">琥珀格为当前可推断雷；完成插旗后绿色数字可 chord，快速翻格积攒余势。</span></li>
             <li><b>03</b><span>首击扫描矿区潜力，随后锁定本层动态配额与补给行情。</span></li>
             <li><b>04</b><span>踩雷不立刻结束，但会扣除 HP 并打断狂热。</span></li>
           </ul>
@@ -1139,7 +1228,7 @@
 
     // 所有会影响平衡的数值只允许出现在 CONFIG 内。
     const CONFIG = Object.freeze({
-      version: "0.5.0",
+      version: "0.6.0",
       board: {
         baseSide: 9,
         maxSide: 16,
@@ -1165,6 +1254,7 @@
         gainPerSafeCellSeconds: 0.4,
         gainPerActionCapSeconds: 0.8,
         frenzyDrainRate: 0.5,
+        inferredMineCue: true,
         readyChordCue: true
       },
       frenzy: {
@@ -1253,6 +1343,8 @@
       gold: $("#gold-value"),
       combo: $("#combo-value"),
       comboCard: $("#combo-card"),
+      comboRecord: $("#combo-record"),
+      runMax: $("#run-max-value"),
       multiplier: $("#multiplier-value"),
       score: $("#score-value"),
       target: $("#target-value"),
@@ -1262,9 +1354,14 @@
       comboStripLabel: $("#combo-strip-label"),
       comboBar: $("#combo-bar"),
       comboFill: $("#combo-fill"),
+      momentumRow: $("#momentum-row"),
+      momentumBar: $("#momentum-bar"),
       momentumFill: $("#momentum-fill"),
+      momentumState: $("#momentum-state"),
       comboState: $("#combo-state"),
       rhythmRule: $("#rhythm-rule"),
+      touchPrimary: $("#touch-primary"),
+      touchDetail: $("#touch-detail"),
       boardSize: $("#board-size"),
       flagCount: $("#flag-count"),
       seed: $("#seed-chip"),
@@ -1982,14 +2079,26 @@
       resolveReveal([index], "click");
     }
 
-    function isChordReady(index) {
-      if (!CONFIG.momentum.enabled || !CONFIG.momentum.readyChordCue) return false;
-      const cell = game.cells[index];
-      if (!cell?.revealed || cell.exploded || cell.adjacent <= 0) return false;
-      const adjacent = neighbors(index);
-      const confirmed = adjacent.filter(next => game.cells[next].flagged || game.cells[next].exploded).length;
-      const covered = adjacent.filter(next => !game.cells[next].revealed && !game.cells[next].flagged && !game.cells[next].exploded).length;
-      return covered > 0 && confirmed === cell.adjacent;
+    function computeVisibleBoardCues() {
+      const cues = { inferredMines: new Set(), chordReady: new Set() };
+      if (!CONFIG.momentum.enabled || !game.boardGenerated || game.mode !== "playing") return cues;
+
+      // 单层静态推断：只读取玩家真实旗帜和已爆雷；本轮推断结果绝不回流为已知雷。
+      for (let index = 0; index < game.cells.length; index += 1) {
+        const cell = game.cells[index];
+        if (!cell.revealed || cell.exploded || cell.adjacent <= 0) continue;
+        const adjacent = neighbors(index);
+        const confirmed = adjacent.filter(next => game.cells[next].flagged || game.cells[next].exploded).length;
+        const covered = adjacent.filter(next => !game.cells[next].revealed && !game.cells[next].flagged && !game.cells[next].exploded);
+        if (!covered.length) continue;
+
+        if (CONFIG.momentum.readyChordCue && confirmed === cell.adjacent) cues.chordReady.add(index);
+        const remainingMines = cell.adjacent - confirmed;
+        if (CONFIG.momentum.inferredMineCue && remainingMines > 0 && remainingMines === covered.length) {
+          for (const coveredIndex of covered) cues.inferredMines.add(coveredIndex);
+        }
+      }
+      return cues;
     }
 
     function attemptChord(index) {
@@ -2417,10 +2526,16 @@
       dom.seed.textContent = game.economyCalibrated
         ? `SEED ${game.runSeed} · Q${Math.round(game.floorSeedIndex * 100)}`
         : `SEED ${game.runSeed} · SCAN`;
-      dom.comboStripLabel.textContent = CONFIG.momentum.enabled ? "Chain / Momentum" : "Chain decay";
+      dom.comboStripLabel.textContent = CONFIG.momentum.enabled ? "Chain" : "Chain decay";
       dom.rhythmRule.textContent = CONFIG.momentum.enabled
-        ? "快速安全翻格积攒余势；基础计时耗尽后自动救链，狂热最低收紧至 10 秒。"
+        ? "琥珀格为当前可推断雷；完成插旗后绿色数字可 chord，快速翻格积攒余势。"
         : "每次安全翻格回满连击条；狂热从 15 秒逐层收紧，最低 10 秒。";
+      dom.touchPrimary.textContent = CONFIG.momentum.enabled
+        ? "琥珀格按住插旗 · 绿框数字轻点"
+        : "轻点翻开 · 按住插旗";
+      dom.touchDetail.textContent = CONFIG.momentum.enabled
+        ? "琥珀＝推断雷 · 绿色＝可 chord · 判定期间计时暂停"
+        : "判定期间连击 / 狂热暂停";
       dom.storageState.textContent = storage.enabled ? "存档：LOCAL / 正常" : "存档：不可用 / 无存档模式";
     }
 
@@ -2430,6 +2545,8 @@
       dom.hpHearts.setAttribute("aria-label", `${game.hp} 点生命`);
       dom.gold.textContent = displayMoney(game.gold);
       dom.combo.textContent = game.combo;
+      dom.runMax.textContent = game.runHighestCombo;
+      dom.comboRecord.hidden = !CONFIG.momentum.enabled;
       dom.multiplier.textContent = `×${comboMultiplier()}`;
       dom.score.textContent = displayMoney(game.floorScoreExact);
       dom.target.textContent = game.economyCalibrated ? game.target : "SCAN";
@@ -2449,51 +2566,63 @@
       const momentumRatio = capacityMs > 0 ? clamp(visibleMomentumMs / capacityMs, 0, 1) : 0;
       const burning = isMomentumBurning();
       const frozen = game.freezeRemainingMs > 0;
+      const baseSeconds = (Math.max(0, game.comboRemainingMs) / 1000).toFixed(1);
+      const momentumSeconds = (Math.max(0, visibleMomentumMs) / 1000).toFixed(1);
+      const momentumCapacitySeconds = (capacityMs / 1000).toFixed(1);
+      const frenzySeconds = (Math.max(0, game.frenzyRemainingMs) / 1000).toFixed(1);
+
       dom.comboFill.style.width = `${ratio * 100}%`;
       dom.momentumFill.style.width = `${momentumRatio * 100}%`;
       dom.comboFill.classList.toggle("danger", game.combo > 0 && ratio < .28 && visibleMomentumMs <= 0 && !frozen);
       dom.comboFill.classList.toggle("frozen", frozen);
-      dom.comboBar.classList.toggle("burning", burning);
       dom.comboBar.classList.toggle("frozen", frozen);
+      dom.momentumRow.hidden = !CONFIG.momentum.enabled;
+      dom.momentumRow.classList.toggle("burning", burning);
+      dom.momentumBar.classList.toggle("burning", burning);
+      dom.momentumBar.classList.toggle("frozen", frozen);
+
       dom.comboState.className = "combo-state";
-      const baseSeconds = (Math.max(0, game.comboRemainingMs) / 1000).toFixed(1);
-      const momentumSeconds = (Math.max(0, visibleMomentumMs) / 1000).toFixed(1);
-      const frenzySeconds = (Math.max(0, game.frenzyRemainingMs) / 1000).toFixed(1);
       if (frozen) {
         dom.comboState.classList.add("frozen");
         dom.comboState.textContent = `冻结 ${(game.freezeRemainingMs / 1000).toFixed(1)}s`;
-      } else if (burning) {
-        dom.comboState.classList.add("momentum");
-        dom.comboState.textContent = game.frenzyActive
-          ? `余势 ${momentumSeconds}s · 狂热 ${frenzySeconds}s`
-          : `余势 ${momentumSeconds}s`;
       } else if (game.frenzyActive) {
         dom.comboState.classList.add("hot");
-        dom.comboState.textContent = visibleMomentumMs > 0
-          ? `狂热 ${frenzySeconds}s · 余 ${momentumSeconds}s`
-          : `狂热 ${frenzySeconds}s`;
+        dom.comboState.textContent = `狂热 ${frenzySeconds}s`;
+      } else if (burning) {
+        dom.comboState.classList.add("momentum");
+        dom.comboState.textContent = "基础耗尽";
       } else if (game.combo > 0) {
         dom.comboState.classList.add("hot");
-        dom.comboState.textContent = visibleMomentumMs > 0
-          ? `${baseSeconds}s · 余 ${momentumSeconds}s`
-          : `${baseSeconds}s`;
+        dom.comboState.textContent = `${baseSeconds}s`;
       } else {
         dom.comboState.textContent = "待机";
       }
-      const ariaParts = [`基础计时 ${baseSeconds} 秒`];
-      if (CONFIG.momentum.enabled) ariaParts.push(`余势 ${momentumSeconds} 秒`);
-      if (game.frenzyActive) ariaParts.push(`狂热 ${frenzySeconds} 秒`);
-      dom.comboBar.setAttribute("aria-label", ariaParts.join("，"));
+
+      dom.momentumState.className = "momentum-state";
+      if (frozen && game.combo > 0) {
+        dom.momentumState.classList.add("frozen");
+        dom.momentumState.textContent = `冻结 · ${momentumSeconds}s`;
+      } else if (burning) {
+        dom.momentumState.classList.add("burning");
+        dom.momentumState.textContent = `接管 ${momentumSeconds}s`;
+      } else {
+        dom.momentumState.textContent = `${momentumSeconds} / ${momentumCapacitySeconds}s`;
+      }
+
+      dom.comboBar.setAttribute("aria-label", `连击基础计时 ${baseSeconds} 秒${game.frenzyActive ? `，狂热 ${frenzySeconds} 秒` : ""}`);
+      dom.momentumBar.setAttribute("aria-label", `余势 ${momentumSeconds} 秒，共 ${momentumCapacitySeconds} 秒${burning ? "，正在接管连击" : ""}`);
     }
 
     function renderBoard(opened = [], exploded = []) {
       const openingMap = new Map(opened.map(entry => [entry.index, entry.wave]));
       const explodedSet = new Set(exploded);
+      const boardCues = computeVisibleBoardCues();
       for (let index = 0; index < game.cells.length; index += 1) {
         const cell = game.cells[index];
         const element = cellElements[index];
         if (!element) continue;
         const classes = ["cell"];
+        const hinted = game.intuition?.hintIndex === index && !cell.revealed && !cell.flagged;
         let label = `第 ${Math.floor(index / game.side) + 1} 行，第 ${index % game.side + 1} 列`;
         let text = "";
         if (cell.revealed) {
@@ -2502,7 +2631,7 @@
             classes.push("exploded"); text = "✹"; label += "，已爆炸的雷";
           } else if (cell.adjacent > 0) {
             classes.push("numbered", `n${cell.adjacent}`); text = String(cell.adjacent); label += `，数字 ${cell.adjacent}`;
-            if (isChordReady(index)) { classes.push("chord-ready"); label += "，可以连锁翻开"; }
+            if (boardCues.chordReady.has(index)) { classes.push("chord-ready"); label += "，可以连锁翻开"; }
           } else label += "，空白安全格";
         } else if (cell.flagged) {
           classes.push("flagged"); text = "⚑"; label += "，已插旗";
@@ -2511,8 +2640,12 @@
           classes.push("revealed", "game-over-mine"); text = "✹"; label += "，未发现的雷";
         } else {
           label += "，未翻开";
+          if (boardCues.inferredMines.has(index) && !hinted) {
+            classes.push("inferred-mine");
+            label += "，根据当前可见标记可推断为雷";
+          }
         }
-        if (game.intuition?.hintIndex === index && !cell.revealed && !cell.flagged) classes.push("hinted");
+        if (hinted) classes.push("hinted");
         if (openingMap.has(index)) {
           classes.push("opening");
           element.style.setProperty("--wave-delay", `${reducedMotion ? 0 : openingMap.get(index) * CONFIG.animation.waveDelayMs}ms`);
