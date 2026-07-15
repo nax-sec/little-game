@@ -226,6 +226,24 @@
     .heart.empty { color: #354247; filter: none; }
     .gold-value { color: var(--amber); }
     .combo-value { color: var(--acid); text-shadow: 0 0 18px rgba(217,255,67,.18); }
+    .combo-stat-line {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 8px;
+      min-width: 0;
+    }
+    .combo-stat-line .stat-value { min-width: 0; }
+    .combo-peak {
+      padding-bottom: 2px;
+      color: var(--muted);
+      font: 700 .56rem/1 var(--mono);
+      letter-spacing: .04em;
+      white-space: nowrap;
+    }
+    .combo-peak strong { color: var(--acid); font-size: .72rem; letter-spacing: -.02em; }
 
     .score-bar {
       position: relative;
@@ -273,6 +291,93 @@
       letter-spacing: .11em;
       text-transform: uppercase;
     }
+
+    .evacuation-strip {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 12px;
+      min-height: 48px;
+      margin: -2px 0 12px;
+      padding: 7px 8px 7px 12px;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 9px;
+      background:
+        linear-gradient(90deg, rgba(100,186,255,.045), transparent 62%),
+        rgba(5, 9, 11, .84);
+      box-shadow: inset 0 1px rgba(255,255,255,.025);
+      transition: border-color .16s, box-shadow .16s, background .16s;
+    }
+
+    .evacuation-strip.grade-b {
+      border-color: rgba(100,186,255,.52);
+      background: linear-gradient(90deg, rgba(100,186,255,.12), transparent 68%), rgba(5,9,11,.9);
+      box-shadow: inset 3px 0 var(--blue), 0 0 18px rgba(100,186,255,.07);
+    }
+
+    .evacuation-strip.grade-a {
+      border-color: rgba(255,184,63,.55);
+      background: linear-gradient(90deg, rgba(255,184,63,.13), transparent 68%), rgba(5,9,11,.9);
+      box-shadow: inset 3px 0 var(--amber), 0 0 18px rgba(255,184,63,.08);
+    }
+
+    .evacuation-copy { min-width: 0; }
+    .evacuation-copy strong {
+      display: block;
+      color: var(--muted);
+      font: 900 .7rem/1 var(--mono);
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+    .grade-b .evacuation-copy strong { color: var(--blue); }
+    .grade-a .evacuation-copy strong { color: var(--amber); }
+    .evacuation-copy span {
+      display: block;
+      margin-top: 5px;
+      overflow: hidden;
+      color: #8da0a5;
+      font: 700 .61rem/1 var(--mono);
+      letter-spacing: .025em;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .evacuate-button {
+      --evacuation-hold-ms: 800ms;
+      position: relative;
+      min-width: 154px;
+      min-height: 36px;
+      padding: 0 13px;
+      overflow: hidden;
+      border: 1px solid rgba(100,186,255,.5);
+      border-radius: 7px;
+      background: rgba(100,186,255,.1);
+      color: #dff5ff;
+      cursor: pointer;
+      font: 900 .66rem/1 var(--mono);
+      letter-spacing: .055em;
+      touch-action: none;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+    }
+
+    .grade-a .evacuate-button { border-color: rgba(255,184,63,.58); background: rgba(255,184,63,.11); color: #ffe4a3; }
+    .evacuate-button::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(0deg, rgba(100,186,255,.38), rgba(100,186,255,.08));
+      transform: scaleY(0);
+      transform-origin: bottom;
+      pointer-events: none;
+    }
+    .grade-a .evacuate-button::before { background: linear-gradient(0deg, rgba(255,184,63,.4), rgba(255,184,63,.08)); }
+    .evacuate-button.hold-arming::before { animation: touchHoldFill var(--evacuation-hold-ms) linear forwards; }
+    .evacuate-button.hold-arming { filter: brightness(1.16); }
+    .evacuate-button.hold-confirmed { animation: touchFlagConfirm .24s cubic-bezier(.2,.9,.25,1.3); }
+    .evacuate-button span { position: relative; z-index: 1; }
 
     .rhythm-row {
       display: grid;
@@ -420,12 +525,13 @@
     }
 
     .board {
-      --size: 10;
+      --rows: 10;
+      --cols: 10;
       display: grid;
-      grid-template-columns: repeat(var(--size), minmax(0, 1fr));
+      grid-template-columns: repeat(var(--cols), minmax(0, 1fr));
       gap: var(--cell-gap);
       width: 100%;
-      aspect-ratio: 1;
+      aspect-ratio: var(--cols) / var(--rows);
       touch-action: manipulation;
       user-select: none;
       -webkit-user-select: none;
@@ -964,10 +1070,20 @@
       .brand { margin: 0; }
       .brand h1 { font-size: 1.74rem; }
       .floor-chip { min-height: 35px; padding: 0 10px; }
-      .stats { grid-template-columns: repeat(2, minmax(0,1fr)); gap: 7px; }
-      .stat-card { min-height: 71px; padding: 10px 12px; }
-      .stat-value { margin-top: 6px; font-size: 1.28rem; }
+      .stats { grid-template-columns: repeat(4, minmax(0,1fr)); gap: 4px; }
+      .stat-card { min-height: 54px; padding: 7px 6px; border-radius: 8px; }
+      .stat-card::after { width: 44px; height: 44px; right: -13px; bottom: -17px; }
+      .stat-label { gap: 3px; font-size: .47rem; letter-spacing: .025em; }
+      .stat-label span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .stat-value { margin-top: 5px; font-size: 1rem; }
+      .stat-value small { font-size: .5rem; }
+      .hp-row { gap: 3px; font-size: .86rem; }
+      .score-bar { height: 3px; margin-top: 5px; }
       .combo-strip { gap: 5px; margin-bottom: 8px; padding-inline: 9px; }
+      .evacuation-strip { gap: 7px; min-height: 43px; margin-bottom: 8px; padding: 5px 6px 5px 9px; }
+      .evacuation-copy strong { font-size: .61rem; letter-spacing: .05em; }
+      .evacuation-copy span { margin-top: 4px; font-size: .54rem; }
+      .evacuate-button { min-width: 112px; min-height: 33px; padding-inline: 8px; font-size: .58rem; }
       .rhythm-row { grid-template-columns: 46px minmax(70px, 1fr) 78px; gap: 8px; }
       .rhythm-row + .rhythm-row { padding-top: 5px; }
       .combo-strip-label { font-size: .55rem; letter-spacing: .06em; }
@@ -998,7 +1114,8 @@
 
     @media (max-width: 390px) {
       .app { width: calc(100% - 10px); }
-      .board-panel { padding: 6px; }
+      .board-panel { padding: 4px; }
+      .board-frame { padding: 3px; }
       .board-toolbar { font-size: .59rem; }
       .mobile-controls { margin-top: 7px; }
       .touch-gesture-hint { gap: 5px; font-size: .62rem; }
@@ -1043,7 +1160,10 @@
       </article>
       <article class="stat-card" id="combo-card">
         <div class="stat-label"><span>Combo / 连击</span><span id="multiplier-value">×1</span></div>
-        <div class="stat-value combo-value" id="combo-value">0</div>
+        <div class="combo-stat-line">
+          <div class="stat-value combo-value" id="combo-value">0</div>
+          <span class="combo-peak" title="本局最高 Combo">最高 <strong id="combo-peak-value">0</strong></span>
+        </div>
       </article>
       <article class="stat-card" id="score-card">
         <div class="stat-label"><span>Quota / 分数线</span><span id="score-ratio">0%</span></div>
@@ -1068,6 +1188,16 @@
         <span class="momentum-state" id="momentum-state">0.0 / 3.0s</span>
       </div>
     </div>
+
+    <section class="evacuation-strip" id="evacuation-strip" aria-label="撤离评级">
+      <div class="evacuation-copy" aria-live="polite">
+        <strong id="evacuation-grade">撤离未解锁</strong>
+        <span id="evacuation-next">首击后扫描撤离配额</span>
+      </div>
+      <button class="evacuate-button" id="evacuate-button" type="button" disabled>
+        <span id="evacuate-label">撤离锁定</span>
+      </button>
+    </section>
 
     <main class="play-layout">
       <section class="panel board-panel" aria-label="扫雷棋盘">
@@ -1114,8 +1244,9 @@
           <ul class="rules-list">
             <li><b>01</b><span>电脑左键翻开、右键插旗；手机轻点翻开、按住插旗。点击已开的数字执行 chord。</span></li>
             <li><b>02</b><span id="rhythm-rule">快速安全翻格积攒余势；基础计时耗尽后自动救链，狂热最低收紧至 10 秒。</span></li>
-            <li><b>03</b><span>首击扫描矿区潜力，随后锁定本层动态配额与补给行情。</span></li>
-            <li><b>04</b><span>踩雷不立刻结束，但会扣除 HP 并打断狂热。</span></li>
+            <li><b>03</b><span>首击必为空白，并保证展开后至少留有一条可推理的续走；随后锁定动态配额与行情。</span></li>
+            <li><b>04</b><span>B / A 达标后可按住撤离；继续清扫可以冲击更高评级，S 必须全清。</span></li>
+            <li><b>05</b><span>踩雷不立刻结束，但会扣除 HP 并打断狂热。</span></li>
           </ul>
         </section>
 
@@ -1182,19 +1313,22 @@
 
     // 所有会影响平衡的数值只允许出现在 CONFIG 内。
     const CONFIG = Object.freeze({
-      version: "0.5.5",
+      version: "0.7.1",
       board: {
         baseSide: 9,
-        maxSide: 16,
+        maxShortSide: 12,
+        maxLongSide: 16,
         baseMineRate: 0.15,
         mineRateStep: 0.005,
         maxMineRate: 0.22,
         firstSafeRadius: 1,
-        firstCascadeMinCells: 12,
-        firstCascadeMaxSafeRatio: 0.25,
-        firstCascadeMaxBoundingFillRatio: 0.95,
-        maxCascadeSideMultiplier: 2,
-        maxGenerationAttempts: 256
+        firstCascadeMinCells: 10,
+        firstCascadeMaxSafeRatio: 0.24,
+        firstContinuationMaxFlags: 2,
+        boxyCascadeMinCells: 9,
+        firstCascadeMaxBoundingFillRatio: 0.9,
+        maxCascadeShortSideMultiplier: 2,
+        maxGenerationAttempts: 1024
       },
       hp: { max: 3 },
       combo: {
@@ -1232,6 +1366,9 @@
       scoring: {
         targetPerSafeCell: 2,
         grades: { S: 2, A: 1.5, B: 1, C: 0 },
+        revealThresholds: { S: 1, A: 0.8, B: 0.6 },
+        evacuationHoldMs: 800,
+        clearBonus: 25,
         sBonus: 50
       },
       economy: {
@@ -1290,7 +1427,11 @@
     const displayMoney = value => Math.floor(value + 1e-7).toLocaleString("zh-CN");
     const padFloor = value => String(value).padStart(2, "0");
     const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const debugEnabled = new URLSearchParams(location.search).get("debug") === "1";
+    const urlParams = new URLSearchParams(location.search);
+    const debugEnabled = urlParams.get("debug") === "1";
+    const debugStartFloor = debugEnabled
+      ? Math.max(1, Math.floor(Number(urlParams.get("floor")) || 1))
+      : 1;
 
     const dom = {
       app: $("#app"),
@@ -1300,6 +1441,7 @@
       hpHearts: $("#hp-hearts"),
       gold: $("#gold-value"),
       combo: $("#combo-value"),
+      comboPeak: $("#combo-peak-value"),
       comboCard: $("#combo-card"),
       multiplier: $("#multiplier-value"),
       score: $("#score-value"),
@@ -1307,6 +1449,11 @@
       scoreRatio: $("#score-ratio"),
       scoreFill: $("#score-fill"),
       scoreCard: $("#score-card"),
+      evacuationStrip: $("#evacuation-strip"),
+      evacuationGrade: $("#evacuation-grade"),
+      evacuationNext: $("#evacuation-next"),
+      evacuateButton: $("#evacuate-button"),
+      evacuateLabel: $("#evacuate-label"),
       comboStripLabel: $("#combo-strip-label"),
       comboBar: $("#combo-bar"),
       comboFill: $("#combo-fill"),
@@ -1327,6 +1474,7 @@
       storageState: $("#storage-state"),
       shopOverlay: $("#shop-overlay"),
       gradeBadge: $("#grade-badge"),
+      shopTitle: $("#shop-title"),
       gradeCopy: $("#grade-copy"),
       shopGold: $("#shop-gold"),
       marketState: $("#market-state"),
@@ -1523,6 +1671,14 @@
       timer: null,
       triggered: false
     };
+    const evacuationPress = {
+      pointerId: null,
+      key: null,
+      startX: 0,
+      startY: 0,
+      timer: null,
+      triggered: false
+    };
     let suppressedTouchClick = { index: -1, until: 0 };
 
     function blankItemLevels() {
@@ -1540,7 +1696,7 @@
         mode: "playing",
         inputMode: "reveal",
         runSeed: createRunSeed(),
-        floor: 1,
+        floor: debugStartFloor,
         hp: CONFIG.hp.max,
         gold: 0,
         combo: 0,
@@ -1567,11 +1723,15 @@
       dom.gameoverOverlay.classList.remove("open");
       dom.shopOverlay.setAttribute("aria-hidden", "true");
       dom.gameoverOverlay.setAttribute("aria-hidden", "true");
-      startFloor(1);
+      startFloor(debugStartFloor);
     }
 
-    function floorSide(floor) {
-      return Math.min(CONFIG.board.baseSide + floor, CONFIG.board.maxSide);
+    function floorDimensions(floor) {
+      const growingSide = CONFIG.board.baseSide + floor;
+      return {
+        rows: Math.min(growingSide, CONFIG.board.maxLongSide),
+        cols: Math.min(growingSide, CONFIG.board.maxShortSide)
+      };
     }
 
     function floorMineRate(floor) {
@@ -1579,10 +1739,13 @@
     }
 
     function startFloor(floor) {
+      cancelEvacuationHold();
       game.floor = floor;
       game.mode = "playing";
-      game.side = floorSide(floor);
-      game.totalCells = game.side * game.side;
+      const dimensions = floorDimensions(floor);
+      game.rows = dimensions.rows;
+      game.cols = dimensions.cols;
+      game.totalCells = game.rows * game.cols;
       game.mineRate = floorMineRate(floor);
       game.mineCount = Math.round(game.totalCells * game.mineRate);
       game.safeCount = game.totalCells - game.mineCount;
@@ -1616,9 +1779,16 @@
       game.insuranceUsedThisFloor = false;
       game.piggyMilestones = new Set();
       game.targetCelebrated = false;
+      game.evacuationUnlocked = false;
+      game.liveGrade = "C";
       game.intuition = { hintIndex: null, armed: true, idleMs: 0, hintCount: 0 };
       game.currentStats = {
         floor,
+        rows: game.rows,
+        cols: game.cols,
+        totalCells: game.totalCells,
+        safeCount: game.safeCount,
+        mineRate: game.mineRate,
         startAt: performance.now(),
         durationSeconds: 0,
         result: "进行中",
@@ -1634,6 +1804,13 @@
         frenzyBaseSeconds: baseFrenzyDurationSeconds(floor),
         baseTarget: game.baseTarget,
         target: null,
+        targetReachedRevealCount: null,
+        targetReachedRevealRatio: null,
+        revealedSafe: 0,
+        revealRatio: 0,
+        settlement: "—",
+        clearBonus: 0,
+        sBonus: 0,
         firstOpenCount: 0,
         firstCascadeMin: 0,
         firstCascadeLimit: 0,
@@ -1641,6 +1818,9 @@
         firstCascadeBoundingCells: 0,
         firstCascadeFillRatio: 0,
         firstCascadeSolidRect: false,
+        openingHasContinuation: false,
+        openingForcedMineCount: 0,
+        openingForcedSafeCount: 0,
         maxCascadeCells: 0,
         cascadeLimit: 0,
         boardGenerationAttempts: 0,
@@ -1662,34 +1842,60 @@
 
     function buildBoard() {
       dom.board.innerHTML = "";
-      dom.board.style.setProperty("--size", game.side);
-      dom.board.setAttribute("aria-rowcount", String(game.side));
-      dom.board.setAttribute("aria-colcount", String(game.side));
+      const display = boardDisplayDimensions();
+      dom.board.style.setProperty("--rows", display.rows);
+      dom.board.style.setProperty("--cols", display.cols);
+      dom.board.setAttribute("aria-rowcount", String(display.rows));
+      dom.board.setAttribute("aria-colcount", String(display.cols));
       const fragment = document.createDocumentFragment();
-      cellElements = game.cells.map((_, index) => {
+      cellElements = Array(game.totalCells);
+      for (let displayIndex = 0; displayIndex < game.totalCells; displayIndex += 1) {
+        const displayRow = Math.floor(displayIndex / display.cols);
+        const displayCol = displayIndex % display.cols;
+        const index = display.transposed
+          ? displayCol * game.cols + displayRow
+          : displayRow * game.cols + displayCol;
         const cell = document.createElement("button");
         cell.type = "button";
         cell.className = "cell";
         cell.dataset.index = String(index);
         cell.setAttribute("role", "gridcell");
-        cell.setAttribute("aria-label", `第 ${Math.floor(index / game.side) + 1} 行，第 ${index % game.side + 1} 列，未翻开`);
+        cell.setAttribute("aria-label", `第 ${displayRow + 1} 行，第 ${displayCol + 1} 列，未翻开`);
         fragment.appendChild(cell);
-        return cell;
-      });
+        cellElements[index] = cell;
+      }
       dom.board.appendChild(fragment);
     }
 
-    function cellNeighbors(index, side) {
+    const desktopBoardQuery = matchMedia("(min-width: 901px)");
+
+    function boardDisplayDimensions() {
+      const transposed = desktopBoardQuery.matches && game.rows !== game.cols;
+      return transposed
+        ? { rows: game.cols, cols: game.rows, transposed }
+        : { rows: game.rows, cols: game.cols, transposed };
+    }
+
+    function logicalIndexToDisplayPosition(index) {
+      const logicalRow = Math.floor(index / game.cols);
+      const logicalCol = index % game.cols;
+      const display = boardDisplayDimensions();
+      return display.transposed
+        ? { row: logicalCol, col: logicalRow }
+        : { row: logicalRow, col: logicalCol };
+    }
+
+    function cellNeighbors(index, rows, cols) {
       const result = [];
-      const row = Math.floor(index / side);
-      const col = index % side;
+      const row = Math.floor(index / cols);
+      const col = index % cols;
       for (let dr = -1; dr <= 1; dr += 1) {
         for (let dc = -1; dc <= 1; dc += 1) {
           if (dr === 0 && dc === 0) continue;
           const nextRow = row + dr;
           const nextCol = col + dc;
-          if (nextRow >= 0 && nextRow < side && nextCol >= 0 && nextCol < side) {
-            result.push(nextRow * side + nextCol);
+          if (nextRow >= 0 && nextRow < rows && nextCol >= 0 && nextCol < cols) {
+            result.push(nextRow * cols + nextCol);
           }
         }
       }
@@ -1697,25 +1903,25 @@
     }
 
     function neighbors(index) {
-      return cellNeighbors(index, game.side);
+      return cellNeighbors(index, game.rows, game.cols);
     }
 
-    function maxCascadeCellsForSide(side) {
-      return Math.round(side * CONFIG.board.maxCascadeSideMultiplier);
+    function maxCascadeCellsForDimensions(rows, cols) {
+      return Math.round(Math.min(rows, cols) * CONFIG.board.maxCascadeShortSideMultiplier);
     }
 
     function createBoardCandidate(runSeed, floor, firstIndex, attempt) {
-      const side = floorSide(floor);
-      const totalCells = side * side;
+      const { rows, cols } = floorDimensions(floor);
+      const totalCells = rows * cols;
       const mineRate = floorMineRate(floor);
       const mineCount = Math.round(totalCells * mineRate);
       const safeCount = totalCells - mineCount;
-      const firstRow = Math.floor(firstIndex / side);
-      const firstCol = firstIndex % side;
+      const firstRow = Math.floor(firstIndex / cols);
+      const firstCol = firstIndex % cols;
       const candidates = [];
       for (let index = 0; index < totalCells; index += 1) {
-        const row = Math.floor(index / side);
-        const col = index % side;
+        const row = Math.floor(index / cols);
+        const col = index % cols;
         const inSafeZone = Math.abs(row - firstRow) <= CONFIG.board.firstSafeRadius && Math.abs(col - firstCol) <= CONFIG.board.firstSafeRadius;
         if (!inSafeZone) candidates.push(index);
       }
@@ -1726,14 +1932,65 @@
       const mineIndices = shuffled(candidates, rng).slice(0, mineCount);
       for (const index of mineIndices) cells[index].mine = true;
       for (let index = 0; index < totalCells; index += 1) {
-        if (!cells[index].mine) cells[index].adjacent = cellNeighbors(index, side).filter(next => cells[next].mine).length;
+        if (!cells[index].mine) cells[index].adjacent = cellNeighbors(index, rows, cols).filter(next => cells[next].mine).length;
       }
-      return { runSeed, floor, firstIndex, side, totalCells, mineCount, safeCount, cells };
+      return { runSeed, floor, firstIndex, rows, cols, totalCells, mineCount, safeCount, cells };
+    }
+
+    function analyzeOpeningContinuation(board, openingGroup) {
+      if (!openingGroup?.length) return { hasContinuation: false, forcedMineCount: 0, forcedSafeCount: 0 };
+      const revealed = new Set(openingGroup);
+      let best = null;
+
+      for (const mineClueIndex of openingGroup) {
+        const mineClue = board.cells[mineClueIndex];
+        if (!mineClue || mineClue.adjacent <= 0) continue;
+        const forcedMines = cellNeighbors(mineClueIndex, board.rows, board.cols)
+          .filter(index => !revealed.has(index));
+        if (
+          !forcedMines.length
+          || forcedMines.length !== mineClue.adjacent
+          || forcedMines.length > CONFIG.board.firstContinuationMaxFlags
+        ) continue;
+
+        const inferredFlags = new Set(forcedMines);
+        const forcedSafe = new Set();
+        let safeClueIndex = -1;
+        for (const clueIndex of openingGroup) {
+          const clue = board.cells[clueIndex];
+          if (!clue || clue.adjacent <= 0) continue;
+          const adjacent = cellNeighbors(clueIndex, board.rows, board.cols);
+          const confirmed = adjacent.filter(index => inferredFlags.has(index)).length;
+          if (confirmed !== clue.adjacent) continue;
+          const safeTargets = adjacent.filter(index => !revealed.has(index) && !inferredFlags.has(index));
+          if (safeTargets.length && safeClueIndex < 0) safeClueIndex = clueIndex;
+          for (const index of safeTargets) forcedSafe.add(index);
+        }
+        if (!forcedSafe.size) continue;
+
+        const candidate = {
+          hasContinuation: true,
+          forcedMineCount: forcedMines.length,
+          forcedSafeCount: forcedSafe.size,
+          mineClueIndex,
+          safeClueIndex
+        };
+        if (
+          !best
+          || candidate.forcedMineCount < best.forcedMineCount
+          || (
+            candidate.forcedMineCount === best.forcedMineCount
+            && candidate.forcedSafeCount > best.forcedSafeCount
+          )
+        ) best = candidate;
+      }
+
+      return best || { hasContinuation: false, forcedMineCount: 0, forcedSafeCount: 0 };
     }
 
     function createSeedBoard(runSeed, floor, firstIndex) {
-      const side = floorSide(floor);
-      const cascadeLimit = maxCascadeCellsForSide(side);
+      const { rows, cols } = floorDimensions(floor);
+      const cascadeLimit = maxCascadeCellsForDimensions(rows, cols);
       let bestBoard = null;
       let bestOverflow = Infinity;
       let bestCascade = Infinity;
@@ -1743,19 +2000,25 @@
         const groups = buildBenchmarkRevealGroups(board);
         const firstCascadeGroup = groups[firstIndex];
         const firstCascadeCells = firstCascadeGroup?.length || 0;
-        const firstCascadeLimit = Math.max(1, Math.round(board.safeCount * CONFIG.board.firstCascadeMaxSafeRatio));
+        const firstCascadeLimit = Math.min(
+          cascadeLimit,
+          Math.max(1, Math.round(board.safeCount * CONFIG.board.firstCascadeMaxSafeRatio))
+        );
         const firstCascadeMin = Math.min(firstCascadeLimit, CONFIG.board.firstCascadeMinCells);
-        const firstRows = firstCascadeGroup?.map(index => Math.floor(index / side)) || [];
-        const firstCols = firstCascadeGroup?.map(index => index % side) || [];
+        const firstRows = firstCascadeGroup?.map(index => Math.floor(index / board.cols)) || [];
+        const firstCols = firstCascadeGroup?.map(index => index % board.cols) || [];
         const firstCascadeBoundingCells = firstCascadeCells
           ? (Math.max(...firstRows) - Math.min(...firstRows) + 1) * (Math.max(...firstCols) - Math.min(...firstCols) + 1)
           : 0;
         const firstCascadeFillRatio = firstCascadeBoundingCells ? firstCascadeCells / firstCascadeBoundingCells : 0;
         const firstCascadeSolidRect = firstCascadeCells > 1 && firstCascadeCells === firstCascadeBoundingCells;
-        const firstCascadeShapeOverflow = Math.max(
-          0,
-          firstCascadeCells - Math.floor(firstCascadeBoundingCells * CONFIG.board.firstCascadeMaxBoundingFillRatio)
-        );
+        const firstCascadeShapeOverflow = firstCascadeCells >= CONFIG.board.boxyCascadeMinCells
+          ? Math.max(
+              0,
+              firstCascadeCells - Math.floor(firstCascadeBoundingCells * CONFIG.board.firstCascadeMaxBoundingFillRatio)
+            )
+          : 0;
+        const openingContinuation = analyzeOpeningContinuation(board, firstCascadeGroup);
         const maxCascadeCells = groups.reduce((largest, group) => {
           if (group === firstCascadeGroup) return largest;
           return Math.max(largest, group?.length || 0);
@@ -1763,6 +2026,7 @@
         const overflow = Math.max(0, firstCascadeMin - firstCascadeCells)
           + Math.max(0, firstCascadeCells - firstCascadeLimit)
           + firstCascadeShapeOverflow
+          + (openingContinuation.hasContinuation ? 0 : board.totalCells * 2)
           + Math.max(0, maxCascadeCells - cascadeLimit);
         Object.assign(board, {
           generationAttempts: attempt + 1,
@@ -1773,6 +2037,11 @@
           firstCascadeBoundingCells,
           firstCascadeFillRatio,
           firstCascadeSolidRect,
+          openingHasContinuation: openingContinuation.hasContinuation,
+          openingForcedMineCount: openingContinuation.forcedMineCount,
+          openingForcedSafeCount: openingContinuation.forcedSafeCount,
+          openingMineClueIndex: openingContinuation.mineClueIndex ?? -1,
+          openingSafeClueIndex: openingContinuation.safeClueIndex ?? -1,
           maxCascadeCells
         });
         if (overflow < bestOverflow || (overflow === bestOverflow && maxCascadeCells < bestCascade)) {
@@ -1784,6 +2053,7 @@
           firstCascadeCells >= firstCascadeMin
           && firstCascadeCells <= firstCascadeLimit
           && firstCascadeShapeOverflow === 0
+          && openingContinuation.hasContinuation
           && maxCascadeCells <= cascadeLimit
         ) return board;
       }
@@ -1812,7 +2082,7 @@
         while (stack.length) {
           const current = stack.pop();
           zeroComponent.push(current);
-          for (const next of cellNeighbors(current, board.side)) {
+          for (const next of cellNeighbors(current, board.rows, board.cols)) {
             const neighbor = board.cells[next];
             if (neighbor.mine) continue;
             if (neighbor.adjacent === 0) {
@@ -1912,7 +2182,15 @@
 
     function referencePotentialForFloor(floor) {
       const references = CONFIG.economy.referencePotential;
-      return references[Math.min(floor, references.length - 1)];
+      const squareReference = references[Math.min(floor, references.length - 1)];
+      const mineRate = floorMineRate(floor);
+      const legacySide = Math.min(CONFIG.board.baseSide + floor, CONFIG.board.maxLongSide);
+      const legacyTotal = legacySide * legacySide;
+      const legacySafe = legacyTotal - Math.round(legacyTotal * mineRate);
+      const { rows, cols } = floorDimensions(floor);
+      const currentTotal = rows * cols;
+      const currentSafe = currentTotal - Math.round(currentTotal * mineRate);
+      return Math.max(1, Math.round(squareReference * currentSafe / legacySafe));
     }
 
     function calibrateFloorEconomy(board, firstIndex) {
@@ -1946,6 +2224,9 @@
         firstCascadeBoundingCells: board.firstCascadeBoundingCells,
         firstCascadeFillRatio: board.firstCascadeFillRatio,
         firstCascadeSolidRect: board.firstCascadeSolidRect,
+        openingHasContinuation: board.openingHasContinuation,
+        openingForcedMineCount: board.openingForcedMineCount,
+        openingForcedSafeCount: board.openingForcedSafeCount,
         maxCascadeCells: board.maxCascadeCells,
         cascadeLimit: board.cascadeLimit,
         boardGenerationAttempts: board.generationAttempts,
@@ -1965,6 +2246,9 @@
         firstCascadeBoundingCells: board.firstCascadeBoundingCells,
         firstCascadeFillRatio: board.firstCascadeFillRatio,
         firstCascadeSolidRect: board.firstCascadeSolidRect,
+        openingHasContinuation: board.openingHasContinuation,
+        openingForcedMineCount: board.openingForcedMineCount,
+        openingForcedSafeCount: board.openingForcedSafeCount,
         maxCascadeCells: board.maxCascadeCells,
         cascadeLimit: board.cascadeLimit,
         boardGenerationAttempts: board.generationAttempts,
@@ -2113,6 +2397,50 @@
       return result;
     }
 
+    function revealedSafeCount() {
+      return Math.max(0, game.safeCount - game.remainingSafe);
+    }
+
+    function gradeForProgress(score, revealedSafe, cleared = game.remainingSafe <= 0) {
+      if (!game.economyCalibrated || !game.target) return "C";
+      const scoreRatio = score / game.target;
+      const revealRatio = game.safeCount > 0 ? revealedSafe / game.safeCount : 0;
+      if (cleared && scoreRatio >= CONFIG.scoring.grades.S) return "S";
+      if (scoreRatio >= CONFIG.scoring.grades.A && revealRatio >= CONFIG.scoring.revealThresholds.A) return "A";
+      if (scoreRatio >= CONFIG.scoring.grades.B && revealRatio >= CONFIG.scoring.revealThresholds.B) return "B";
+      return "C";
+    }
+
+    function floorProgressSnapshot() {
+      const score = roundMoney(game.floorScoreExact);
+      const revealedSafe = revealedSafeCount();
+      const cleared = game.remainingSafe <= 0;
+      return {
+        score,
+        revealedSafe,
+        revealRatio: game.safeCount > 0 ? revealedSafe / game.safeCount : 0,
+        cleared,
+        grade: gradeForProgress(score, revealedSafe, cleared)
+      };
+    }
+
+    function distanceToGrade(grade, progress = floorProgressSnapshot()) {
+      const requiredScore = Math.ceil(game.target * CONFIG.scoring.grades[grade]);
+      const requiredCells = grade === "S"
+        ? game.safeCount
+        : Math.ceil(game.safeCount * CONFIG.scoring.revealThresholds[grade]);
+      return {
+        score: Math.max(0, requiredScore - progress.score),
+        cells: Math.max(0, requiredCells - progress.revealedSafe)
+      };
+    }
+
+    function canEvacuate() {
+      if (game.mode !== "playing" || !game.economyCalibrated || game.remainingSafe <= 0) return false;
+      const grade = floorProgressSnapshot().grade;
+      return grade === "B" || grade === "A";
+    }
+
     function attemptReveal(index) {
       if (game.mode !== "playing") return;
       const cell = game.cells[index];
@@ -2192,13 +2520,15 @@
 
       if (game.remainingSafe <= 0 && game.mode === "playing") {
         game.mode = "transition";
-        window.setTimeout(completeFloor, CONFIG.animation.floorClearDelayMs);
+        renderEvacuation();
+        window.setTimeout(() => completeFloor("cleared"), CONFIG.animation.floorClearDelayMs);
       }
     }
 
     function resolveMineHits(mineIndices) {
       const hitCount = mineIndices.length;
       let insuranceTriggered = false;
+      let retainedCombo = 0;
       for (const index of mineIndices) {
         const cell = game.cells[index];
         cell.exploded = true;
@@ -2215,9 +2545,9 @@
           insuranceTriggered = true;
           game.insuranceUsedThisFloor = true;
           game.combo = Math.floor(game.combo * itemEffect("insurance"));
+          retainedCombo = game.combo;
           game.comboRemainingMs = game.combo > 0 ? comboDurationMs() : 0;
-          showToast(`保险丝熔断 · 保留 ${game.combo} combo`, "info");
-          if (hitCount > 1 || game.combo === 0) resetCombo("mine");
+          if (game.combo === 0) resetCombo("mine");
         } else {
           resetCombo("mine");
         }
@@ -2225,7 +2555,11 @@
 
       sound.hit();
       triggerHitFeedback(hitCount);
-      if (hitCount > 1) showToast(`错误 chord 引爆 ${hitCount} 颗雷 · HP −${hitCount}`, "danger");
+      if (insuranceTriggered) {
+        const hitCopy = hitCount > 1 ? `错误 chord 引爆 ${hitCount} 颗雷 · HP −${hitCount}` : "踩雷 · HP −1";
+        const comboCopy = retainedCombo > 0 ? `保险丝保留 ${retainedCombo} combo` : "保险丝未能保留 combo";
+        showToast(`${hitCopy} · ${comboCopy}`, hitCount > 1 ? "danger" : "info");
+      } else if (hitCount > 1) showToast(`错误 chord 引爆 ${hitCount} 颗雷 · HP −${hitCount}`, "danger");
       else if (!insuranceTriggered) showToast("踩雷 · HP −1", "danger");
     }
 
@@ -2278,10 +2612,29 @@
         }
       }
 
-      if (!game.targetCelebrated && beforeScore < game.target && game.floorScoreExact >= game.target) {
+      const reachedTargetNow = !game.targetCelebrated && beforeScore < game.target && game.floorScoreExact >= game.target;
+      if (reachedTargetNow) {
         game.targetCelebrated = true;
+        game.currentStats.targetReachedRevealCount = revealedSafeCount();
+        game.currentStats.targetReachedRevealRatio = game.safeCount > 0
+          ? game.currentStats.targetReachedRevealCount / game.safeCount
+          : 0;
+      }
+
+      const progress = floorProgressSnapshot();
+      if (!game.evacuationUnlocked && (progress.grade === "B" || progress.grade === "A")) {
+        game.evacuationUnlocked = true;
+        game.liveGrade = progress.grade;
         sound.target();
-        showToast("分数线突破 · 免费刷新已锁定", "success");
+        showToast(`${progress.grade} 评级达成 · 撤离已解锁`, "success");
+      } else if (progress.grade === "A" && game.liveGrade !== "A") {
+        game.liveGrade = "A";
+        sound.target();
+        showToast("A 评级达成 · 继续清场冲 S", "success");
+      } else if (reachedTargetNow) {
+        const distance = distanceToGrade("B", progress);
+        sound.target();
+        showToast(`B 分数已达 · 清扫还差 ${distance.cells} 格`, "success");
       }
       return reward;
     }
@@ -2386,26 +2739,46 @@
       renderHourglassButtons();
     }
 
-    function completeFloor() {
+    function evacuateFloor() {
+      if (!canEvacuate()) return;
+      game.mode = "transition";
+      finishTouchPress(null, true);
+      renderEvacuation();
+      dom.evacuateButton.classList.add("hold-confirmed");
+      try { navigator.vibrate?.(CONFIG.touch.feedbackVibrationMs * 2); }
+      catch (_) { /* 不支持震动时静默 */ }
+      window.setTimeout(() => completeFloor("evacuated"), 220);
+    }
+
+    function completeFloor(settlement = "cleared") {
       if (game.mode !== "transition") return;
       game.mode = "shop";
+      cancelEvacuationHold();
       endFrenzy();
       game.comboRemainingMs = 0;
       clearMomentum();
       game.freezeRemainingMs = 0;
-      game.gold = roundMoney(game.gold);
       const score = roundMoney(game.floorScoreExact);
+      const cleared = settlement === "cleared" || game.remainingSafe <= 0;
+      const progress = floorProgressSnapshot();
       const ratio = score / game.target;
-      const grade = ratio >= CONFIG.scoring.grades.S ? "S" : ratio >= CONFIG.scoring.grades.A ? "A" : ratio >= CONFIG.scoring.grades.B ? "B" : "C";
+      const grade = gradeForProgress(score, progress.revealedSafe, cleared);
       const freeRefreshes = grade === "C" ? 0 : 1;
-      if (grade === "S") game.gold += CONFIG.scoring.sBonus;
+      const clearBonus = cleared ? CONFIG.scoring.clearBonus : 0;
+      const sBonus = grade === "S" ? CONFIG.scoring.sBonus : 0;
+      game.gold = roundMoney(game.gold) + clearBonus + sBonus;
       game.currentStats.durationSeconds = (performance.now() - game.currentStats.startAt) / 1000;
-      game.currentStats.result = "已通关";
+      game.currentStats.result = cleared ? "已清场" : "已撤离";
       game.currentStats.score = score;
       game.currentStats.grade = grade;
+      game.currentStats.revealedSafe = progress.revealedSafe;
+      game.currentStats.revealRatio = progress.revealRatio;
+      game.currentStats.settlement = cleared ? "cleared" : "evacuated";
+      game.currentStats.clearBonus = clearBonus;
+      game.currentStats.sBonus = sBonus;
       game.debugFloors.push(game.currentStats);
       game.completedFloorStats = game.currentStats;
-      game.shop = { grade, ratio, freeRefreshes, paidRefreshes: 0, generation: 0, slots: [] };
+      game.shop = { grade, ratio, cleared, clearBonus, sBonus, freeRefreshes, paidRefreshes: 0, generation: 0, slots: [] };
       generateShop();
       renderShop();
       renderAll(false);
@@ -2414,11 +2787,12 @@
       sound.target();
     }
 
-    function gradeCopy(grade, score, target) {
-      if (grade === "S") return `极限清扫：${score} / ${target}，额外获得 ${CONFIG.scoring.sBonus} 金币。`;
-      if (grade === "A") return `高效清扫：${score} / ${target}，获得一次免费刷新。`;
-      if (grade === "B") return `达标清扫：${score} / ${target}，获得一次免费刷新。`;
-      return `低速清扫：${score} / ${target}，本层没有评分奖励。`;
+    function gradeCopy(grade, score, target, cleared = false) {
+      const clearCopy = cleared && CONFIG.scoring.clearBonus ? ` · 全清 +${CONFIG.scoring.clearBonus}` : "";
+      if (grade === "S") return `S 清场：${score} / ${target} · S +${CONFIG.scoring.sBonus}${clearCopy}`;
+      if (grade === "A") return `A ${cleared ? "清场" : "撤离"}：${score} / ${target} · 免费刷新${clearCopy}`;
+      if (grade === "B") return `B ${cleared ? "清场" : "撤离"}：${score} / ${target} · 免费刷新${clearCopy}`;
+      return `C 清场：${score} / ${target} · 无评级奖励${clearCopy}`;
     }
 
     function marketAdjustedPrice(basePrice) {
@@ -2564,7 +2938,8 @@
       renderSoundButton();
       renderDebug();
       dom.floor.textContent = padFloor(game.floor);
-      dom.boardSize.textContent = `${game.side}×${game.side}`;
+      const display = boardDisplayDimensions();
+      dom.boardSize.textContent = `${display.cols}×${display.rows}`;
       dom.seed.textContent = game.economyCalibrated
         ? `SEED ${game.runSeed} · Q${Math.round(game.floorSeedIndex * 100)}`
         : `SEED ${game.runSeed} · SCAN`;
@@ -2582,6 +2957,7 @@
       dom.hpHearts.setAttribute("aria-label", `${game.hp} 点生命`);
       dom.gold.textContent = displayMoney(game.gold);
       dom.combo.textContent = game.combo;
+      dom.comboPeak.textContent = game.runHighestCombo;
       dom.multiplier.textContent = `×${comboMultiplier()}`;
       dom.score.textContent = displayMoney(game.floorScoreExact);
       dom.target.textContent = game.economyCalibrated ? game.target : "SCAN";
@@ -2591,6 +2967,67 @@
       dom.scoreCard.classList.toggle("target-hit", game.targetCelebrated);
       dom.scoreCard.classList.toggle("scanning", !game.economyCalibrated);
       dom.flagCount.textContent = `${game.flags}/${game.mineCount}`;
+      renderEvacuation();
+    }
+
+    function renderEvacuation() {
+      dom.evacuationStrip.classList.remove("grade-b", "grade-a");
+      dom.evacuateButton.style.setProperty("--evacuation-hold-ms", `${CONFIG.scoring.evacuationHoldMs}ms`);
+
+      if (!game.economyCalibrated) {
+        dom.evacuationGrade.textContent = "撤离未解锁";
+        dom.evacuationNext.textContent = "首击后扫描撤离配额";
+        dom.evacuateLabel.textContent = "撤离锁定";
+        dom.evacuateButton.disabled = true;
+        dom.evacuateButton.setAttribute("aria-label", "撤离尚未解锁");
+        return;
+      }
+
+      const progress = floorProgressSnapshot();
+      const unlocked = progress.grade === "B" || progress.grade === "A";
+      const transitioning = game.mode === "transition";
+      if (progress.grade === "A") dom.evacuationStrip.classList.add("grade-a");
+      else if (progress.grade === "B") dom.evacuationStrip.classList.add("grade-b");
+
+      if (progress.cleared) {
+        dom.evacuationGrade.textContent = `${progress.grade} 清场完成`;
+        dom.evacuationNext.textContent = "正在结算本层奖励";
+      } else if (transitioning) {
+        dom.evacuationGrade.textContent = `${progress.grade} 撤离确认`;
+        dom.evacuationNext.textContent = "正在进入补给站";
+      } else if (progress.grade === "A") {
+        const distance = distanceToGrade("S", progress);
+        dom.evacuationGrade.textContent = "A 可撤";
+        dom.evacuationNext.textContent = `距 S：+${distance.score} 分 / ${distance.cells} 格`;
+      } else if (progress.grade === "B") {
+        const distance = distanceToGrade("A", progress);
+        dom.evacuationGrade.textContent = "B 可撤";
+        dom.evacuationNext.textContent = `距 A：+${distance.score} 分 / ${distance.cells} 格`;
+      } else {
+        const distance = distanceToGrade("B", progress);
+        dom.evacuationGrade.textContent = "撤离未解锁";
+        dom.evacuationNext.textContent = `距 B：+${distance.score} 分 / ${distance.cells} 格`;
+      }
+
+      const actionable = canEvacuate();
+      dom.evacuateButton.disabled = !actionable;
+      dom.evacuateLabel.textContent = transitioning
+        ? "撤离中"
+        : game.mode === "shop"
+          ? "本层已结算"
+          : unlocked
+            ? `按住 ${formatEffectNumber(CONFIG.scoring.evacuationHoldMs / 1000)}s 撤离`
+            : "撤离锁定";
+      dom.evacuateButton.setAttribute(
+        "aria-label",
+        transitioning
+          ? "正在撤离"
+          : actionable
+            ? `按住 ${CONFIG.scoring.evacuationHoldMs / 1000} 秒，以 ${progress.grade} 评级撤离`
+            : game.mode === "shop"
+              ? "本层已经结算"
+              : "撤离尚未解锁"
+      );
     }
 
     function renderDynamicTimers() {
@@ -2656,7 +3093,8 @@
         const element = cellElements[index];
         if (!element) continue;
         const classes = ["cell"];
-        let label = `第 ${Math.floor(index / game.side) + 1} 行，第 ${index % game.side + 1} 列`;
+        const displayPosition = logicalIndexToDisplayPosition(index);
+        let label = `第 ${displayPosition.row + 1} 行，第 ${displayPosition.col + 1} 列`;
         let text = "";
         if (cell.revealed) {
           classes.push("revealed");
@@ -2728,11 +3166,12 @@
     }
 
     function renderShop() {
-      const { grade } = game.shop;
+      const { grade, cleared } = game.shop;
       const score = roundMoney(game.floorScoreExact);
       dom.gradeBadge.textContent = grade;
       dom.gradeBadge.className = `grade-badge grade-${grade.toLowerCase()}`;
-      dom.gradeCopy.textContent = gradeCopy(grade, score, game.target);
+      dom.shopTitle.textContent = cleared ? "区域清扫完成" : "撤离成功 · 补给开放";
+      dom.gradeCopy.textContent = gradeCopy(grade, score, game.target, cleared);
       dom.shopGold.textContent = displayMoney(game.gold);
       dom.marketState.textContent = `矿势 ${Math.round(game.floorPotentialIndex * 100)}% · 市场 ×${game.marketIndex.toFixed(2)}`;
       dom.marketState.title = `本层潜力 ${game.floorPotential} / 参考 ${game.floorReferencePotential}；价格由累计种子潜力调整`;
@@ -2766,17 +3205,30 @@
       dom.debugPanel.hidden = false;
       const rows = [...game.debugFloors];
       if (game.mode !== "shop" && game.mode !== "gameover" && game.currentStats) {
-        rows.push({ ...game.currentStats, durationSeconds: (performance.now() - game.currentStats.startAt) / 1000, score: roundMoney(game.floorScoreExact) });
+        const progress = floorProgressSnapshot();
+        rows.push({
+          ...game.currentStats,
+          durationSeconds: (performance.now() - game.currentStats.startAt) / 1000,
+          score: progress.score,
+          grade: progress.grade,
+          revealedSafe: progress.revealedSafe,
+          revealRatio: progress.revealRatio
+        });
       }
       dom.debugContent.innerHTML = rows.map(stats => {
         const b = stats.breakdown;
+        const targetReach = Number.isFinite(stats.targetReachedRevealRatio)
+          ? `${(stats.targetReachedRevealRatio * 100).toFixed(1)}% (${stats.targetReachedRevealCount}/${stats.safeCount})`
+          : "—";
         return `<div class="debug-floor">
-          <strong>F${stats.floor} · ${stats.result} · ${stats.durationSeconds.toFixed(1)}s</strong><br>
+          <strong>F${stats.floor} · ${stats.cols}×${stats.rows} · ${stats.result} · ${stats.durationSeconds.toFixed(1)}s</strong><br>
           score=${stats.score} grade=${stats.grade} maxCombo=${stats.maxCombo} frenzyBase=${stats.frenzyBaseSeconds}s<br>
-          economy: first=${stats.firstOpenCount} [${stats.firstCascadeMin}-${stats.firstCascadeLimit}] (${(Number(stats.firstOpenRatio || 0) * 100).toFixed(1)}%) shape=${stats.firstOpenCount}/${stats.firstCascadeBoundingCells} (${(Number(stats.firstCascadeFillRatio || 0) * 100).toFixed(0)}%)${stats.firstCascadeSolidRect ? " RECT" : ""} cascade=${stats.maxCascadeCells}/${stats.cascadeLimit} attempts=${stats.boardGenerationAttempts} potential=${stats.potential}/${stats.referencePotential} raw=${Number(stats.rawSeedIndex).toFixed(3)} quota=${Number(stats.seedIndex).toFixed(3)} target=${stats.target ?? "SCAN"} market=×${Number(stats.marketIndex).toFixed(3)} eval=${Number(stats.economyEvalMs).toFixed(1)}ms<br>
+          progress: revealed=${(Number(stats.revealRatio || 0) * 100).toFixed(1)}% (${stats.revealedSafe || 0}/${stats.safeCount}) target@=${targetReach}<br>
+          economy: first=${stats.firstOpenCount} [${stats.firstCascadeMin}-${stats.firstCascadeLimit}] (${(Number(stats.firstOpenRatio || 0) * 100).toFixed(1)}%) shape=${stats.firstOpenCount}/${stats.firstCascadeBoundingCells} (${(Number(stats.firstCascadeFillRatio || 0) * 100).toFixed(0)}%)${stats.firstCascadeSolidRect ? " RECT" : ""} opening=${stats.openingHasContinuation ? `${stats.openingForcedMineCount}F→${stats.openingForcedSafeCount}S` : "DEAD"} cascade=${stats.maxCascadeCells}/${stats.cascadeLimit} attempts=${stats.boardGenerationAttempts} potential=${stats.potential}/${stats.referencePotential} raw=${Number(stats.rawSeedIndex).toFixed(3)} quota=${Number(stats.seedIndex).toFixed(3)} target=${stats.target ?? "SCAN"} market=×${Number(stats.marketIndex).toFixed(3)} eval=${Number(stats.economyEvalMs).toFixed(1)}ms<br>
           breaks=${stats.comboBreaks} mines=${stats.minesHit}<br>
           ${CONFIG.momentum.enabled ? `momentum: earned=${(Number(stats.momentumEarnedMs || 0) / 1000).toFixed(1)}s spent=${(Number(stats.momentumSpentMs || 0) / 1000).toFixed(1)}s saves=${stats.momentumSaves || 0} hardBreaks=${stats.momentumHardBreaks || 0}<br>` : ""}
           gold: base ${formatEffectNumber(b.base)} / mult +${formatEffectNumber(b.multiplier)} / frenzy +${formatEffectNumber(b.frenzy)} / finger +${formatEffectNumber(b.goldenFinger)} / piggy +${formatEffectNumber(b.piggyBank)}<br>
+          settle: ${stats.settlement || "—"} / clear +${stats.clearBonus || 0} / S +${stats.sBonus || 0}<br>
           buys: ${stats.purchases.length ? stats.purchases.join(" | ") : "—"}
         </div>`;
       }).join("") || "尚无数据";
@@ -2905,6 +3357,71 @@
       if (distance > CONFIG.touch.cancelDistancePx) finishTouchPress(event, true);
     }
 
+    function cancelEvacuationHold(event = null) {
+      if (event?.pointerId !== undefined && evacuationPress.pointerId !== null && event.pointerId !== evacuationPress.pointerId) return;
+      const pointerId = evacuationPress.pointerId;
+      if (evacuationPress.timer) clearTimeout(evacuationPress.timer);
+      dom.evacuateButton?.classList.remove("hold-arming");
+      evacuationPress.pointerId = null;
+      evacuationPress.key = null;
+      evacuationPress.startX = 0;
+      evacuationPress.startY = 0;
+      evacuationPress.timer = null;
+      evacuationPress.triggered = false;
+      if (pointerId !== null && dom.evacuateButton?.hasPointerCapture?.(pointerId)) {
+        dom.evacuateButton.releasePointerCapture(pointerId);
+      }
+    }
+
+    function armEvacuationHold({ pointerId = null, key = null, startX = 0, startY = 0 } = {}) {
+      if (!canEvacuate()) return;
+      cancelEvacuationHold();
+      evacuationPress.pointerId = pointerId;
+      evacuationPress.key = key;
+      evacuationPress.startX = startX;
+      evacuationPress.startY = startY;
+      evacuationPress.triggered = false;
+      dom.evacuateButton.classList.add("hold-arming");
+      evacuationPress.timer = window.setTimeout(() => {
+        if (!canEvacuate()) {
+          cancelEvacuationHold();
+          return;
+        }
+        evacuationPress.triggered = true;
+        dom.evacuateButton.classList.remove("hold-arming");
+        evacuateFloor();
+        window.setTimeout(() => dom.evacuateButton.classList.remove("hold-confirmed"), 280);
+      }, CONFIG.scoring.evacuationHoldMs);
+    }
+
+    function beginEvacuationPointer(event) {
+      if (event.button !== 0 || !canEvacuate()) return;
+      event.preventDefault();
+      sound.ensure();
+      markPlayerActivity();
+      armEvacuationHold({ pointerId: event.pointerId, startX: event.clientX, startY: event.clientY });
+      dom.evacuateButton.setPointerCapture?.(event.pointerId);
+    }
+
+    function moveEvacuationPointer(event) {
+      if (event.pointerId !== evacuationPress.pointerId || evacuationPress.triggered) return;
+      const distance = Math.hypot(event.clientX - evacuationPress.startX, event.clientY - evacuationPress.startY);
+      if (distance > CONFIG.touch.cancelDistancePx) cancelEvacuationHold(event);
+    }
+
+    function beginEvacuationKey(event) {
+      if ((event.key !== " " && event.key !== "Enter") || event.repeat || !canEvacuate()) return;
+      event.preventDefault();
+      sound.ensure();
+      armEvacuationHold({ key: event.key });
+    }
+
+    function finishEvacuationKey(event) {
+      if (event.key !== evacuationPress.key) return;
+      event.preventDefault();
+      cancelEvacuationHold();
+    }
+
     function tick(now) {
       const delta = clamp(now - lastTick, 0, 250);
       lastTick = now;
@@ -2973,6 +3490,19 @@
     dom.board.addEventListener("pointercancel", event => finishTouchPress(event));
     dom.board.addEventListener("lostpointercapture", event => finishTouchPress(event));
 
+    dom.evacuateButton.addEventListener("pointerdown", beginEvacuationPointer);
+    dom.evacuateButton.addEventListener("pointermove", moveEvacuationPointer);
+    dom.evacuateButton.addEventListener("pointerup", cancelEvacuationHold);
+    dom.evacuateButton.addEventListener("pointercancel", cancelEvacuationHold);
+    dom.evacuateButton.addEventListener("lostpointercapture", cancelEvacuationHold);
+    dom.evacuateButton.addEventListener("keydown", beginEvacuationKey);
+    dom.evacuateButton.addEventListener("keyup", finishEvacuationKey);
+    dom.evacuateButton.addEventListener("blur", () => cancelEvacuationHold());
+    dom.evacuateButton.addEventListener("click", event => {
+      event.preventDefault();
+      if (canEvacuate()) showToast(`请按住 ${CONFIG.scoring.evacuationHoldMs / 1000} 秒确认撤离`, "info");
+    });
+
     $$('[data-mode]').forEach(button => button.addEventListener("click", () => {
       if (game.mode !== "playing") return;
       game.inputMode = button.dataset.mode;
@@ -2995,7 +3525,16 @@
     });
 
     document.addEventListener("pointerdown", () => sound.ensure(), { once: true, capture: true });
-    document.addEventListener("visibilitychange", () => { lastTick = performance.now(); });
+    document.addEventListener("visibilitychange", () => {
+      lastTick = performance.now();
+      if (document.hidden) cancelEvacuationHold();
+    });
+    desktopBoardQuery.addEventListener("change", () => {
+      if (!game) return;
+      finishTouchPress(null, true);
+      buildBoard();
+      renderAll();
+    });
     document.addEventListener("keydown", event => {
       if (event.code === "Space") {
         if (game.items.hourglass && game.mode === "playing") { event.preventDefault(); useHourglass(); }
