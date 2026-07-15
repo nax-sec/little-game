@@ -1182,7 +1182,7 @@
 
     // 所有会影响平衡的数值只允许出现在 CONFIG 内。
     const CONFIG = Object.freeze({
-      version: "0.5.2",
+      version: "0.5.3",
       board: {
         baseSide: 9,
         maxSide: 16,
@@ -1190,6 +1190,7 @@
         mineRateStep: 0.005,
         maxMineRate: 0.22,
         firstSafeRadius: 1,
+        firstCascadeUncapped: true,
         maxCascadeSideMultiplier: 2,
         maxGenerationAttempts: 256
       },
@@ -1731,10 +1732,15 @@
       for (let attempt = 0; attempt < CONFIG.board.maxGenerationAttempts; attempt += 1) {
         const board = createBoardCandidate(runSeed, floor, firstIndex, attempt);
         const groups = buildBenchmarkRevealGroups(board);
-        const maxCascadeCells = groups.reduce((largest, group) => Math.max(largest, group?.length || 0), 0);
+        const firstCascadeGroup = groups[firstIndex];
+        const maxCascadeCells = groups.reduce((largest, group) => {
+          if (CONFIG.board.firstCascadeUncapped && group === firstCascadeGroup) return largest;
+          return Math.max(largest, group?.length || 0);
+        }, 0);
         Object.assign(board, {
           generationAttempts: attempt + 1,
           cascadeLimit,
+          firstCascadeCells: firstCascadeGroup?.length || 0,
           maxCascadeCells
         });
         if (maxCascadeCells < bestCascade) {
