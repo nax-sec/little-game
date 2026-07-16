@@ -1383,7 +1383,8 @@
       },
       deadlockRescue: {
         enabled: true,
-        maxVisibleConstraints: 256
+        maxVisibleConstraints: 256,
+        maxRemainingSafeCells: 8
       },
       frenzy: {
         threshold: 30,
@@ -2643,6 +2644,14 @@
         || game.remainingSafe <= 0
       ) {
         if (rescue) rescue.hintIndex = null;
+        return;
+      }
+
+      if (game.remainingSafe > CONFIG.deadlockRescue.maxRemainingSafeCells) {
+        rescue.hintIndex = null;
+        rescue.conflictStateKey = null;
+        rescue.deadEndStateKey = null;
+        rescue.skippedStateKey = null;
         return;
       }
 
