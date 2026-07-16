@@ -39,6 +39,7 @@
     body {
       min-width: 300px;
       min-height: 100svh;
+      min-height: 100dvh;
       margin: 0;
       overflow-x: hidden;
       color: var(--paper);
@@ -859,6 +860,9 @@
       display: grid;
       place-items: center;
       padding: 18px;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      -webkit-overflow-scrolling: touch;
       background: rgba(2, 5, 6, .78);
       backdrop-filter: blur(14px);
       opacity: 0;
@@ -871,6 +875,7 @@
     .modal {
       width: min(920px, 100%);
       max-height: min(860px, calc(100svh - 36px));
+      max-height: min(860px, calc(100dvh - 36px));
       overflow: auto;
       border: 1px solid #405258;
       border-radius: 18px;
@@ -993,7 +998,10 @@
     .home-modal {
       position: relative;
       width: min(1080px, 100%);
-      overflow: hidden;
+      overflow-x: hidden;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      -webkit-overflow-scrolling: touch;
       border-color: #4b5e63;
       border-radius: 22px;
       background: #0a1013;
@@ -1354,6 +1362,7 @@
       .footer-note { display: none; }
       .home-overlay { padding: 7px; }
       .home-modal { max-height: calc(100svh - 14px); border-radius: 14px; }
+      .home-modal { max-height: calc(100dvh - 14px); }
       .home-shell { grid-template-columns: 1fr; min-height: auto; }
       .home-brief { min-height: 300px; padding: 27px 22px; border-right: 0; border-bottom: 1px solid var(--line); }
       .home-title { margin: 35px 0 13px; font-size: clamp(3.5rem, 20vw, 5.7rem); }
@@ -1395,6 +1404,115 @@
       .launch-panel { padding-inline: 17px; }
       .restart-actions { grid-template-columns: 1fr; }
       .restart-button { min-height: 66px; }
+    }
+
+    @media (max-width: 700px) and (max-height: 760px) {
+      .home-brief { min-height: 220px; padding: 18px; }
+      .home-status { padding: 6px 9px; font-size: .52rem; }
+      .home-title { margin: 18px 0 8px; font-size: clamp(2.9rem, 17vw, 4.6rem); }
+      .home-copy { font-size: .6rem; line-height: 1.4; }
+      .home-records { gap: 4px; margin-top: 14px; }
+      .home-record { padding: 7px 5px; }
+      .home-record strong { margin-top: 5px; font-size: .82rem; }
+      .launch-panel { padding: 18px 17px calc(18px + env(safe-area-inset-bottom)); }
+      .launch-panel h2 { margin: 8px 0 5px; font-size: 1.65rem; }
+      .launch-note { margin-bottom: 14px; font-size: .6rem; line-height: 1.4; }
+      .launch-form { gap: 10px; }
+      .launch-field { gap: 5px; }
+      .launch-field input { min-height: 42px; }
+      .launch-sound { min-height: 42px; }
+      .launch-submit { min-height: 48px; margin-top: 0; }
+      .launch-foot { margin-top: 10px; }
+    }
+
+    @media (orientation: landscape) and (min-width: 520px) and (max-height: 520px) {
+      .app {
+        width: calc(100% - 12px - env(safe-area-inset-left) - env(safe-area-inset-right));
+        padding: 6px 0 max(10px, env(safe-area-inset-bottom));
+      }
+      .topbar { align-items: center; gap: 8px; margin-bottom: 5px; }
+      .brand-kicker, .brand-cn { display: none; }
+      .brand { margin: 0; }
+      .brand h1 { font-size: 1.5rem; }
+      .top-actions { gap: 5px; }
+      .icon-button { width: 36px; min-height: 32px; }
+      .floor-chip { min-height: 32px; padding-inline: 9px; }
+      .stats { gap: 4px; margin-bottom: 5px; }
+      .stat-card { min-height: 48px; padding: 6px 7px; border-radius: 8px; }
+      .stat-card::after { width: 42px; height: 42px; right: -13px; bottom: -17px; }
+      .stat-label { font-size: .45rem; letter-spacing: .03em; }
+      .stat-value { margin-top: 4px; font-size: .92rem; }
+      .stat-value small { font-size: .46rem; }
+      .hp-row { gap: 2px; font-size: .78rem; }
+      .score-bar { height: 3px; margin-top: 4px; }
+      .combo-strip { gap: 4px; min-height: 28px; margin-bottom: 5px; padding: 5px 8px; }
+      .rhythm-row { grid-template-columns: 42px minmax(70px, 1fr) 74px; gap: 7px; min-height: 17px; }
+      .rhythm-row + .rhythm-row { padding-top: 4px; }
+      .combo-strip-label { font-size: .5rem; letter-spacing: .04em; }
+      .label-en, .label-divider { display: none; }
+      .combo-state, .momentum-state { font-size: .52rem; letter-spacing: .025em; }
+      .evacuation-strip { gap: 6px; min-height: 38px; margin: 0 0 5px; padding: 4px 5px 4px 8px; }
+      .evacuation-copy strong { font-size: .56rem; }
+      .evacuation-copy span { margin-top: 3px; font-size: .48rem; }
+      .evacuate-button { min-width: 104px; min-height: 30px; padding-inline: 7px; font-size: .54rem; }
+      .play-layout { grid-template-columns: minmax(0, 1fr) clamp(145px, 24vw, 200px); gap: 6px; }
+      .board-panel { padding: 6px; border-radius: 10px; }
+      .board-toolbar { min-height: 27px; margin-bottom: 4px; font-size: .56rem; }
+      .board-meta { gap: 9px; }
+      .seed-chip { display: none; }
+      .board-frame { width: min(100%, 690px); padding: 3px; border-radius: 7px; }
+      .side-stack { grid-template-columns: 1fr; gap: 6px; }
+      .side-panel { padding: 9px; }
+      .panel-head { margin-bottom: 7px; }
+      .panel-title { font-size: .7rem; }
+      .empty-loadout { padding: 10px 6px; font-size: .62rem; }
+      .rules-panel { display: none; }
+      .touch-gesture-hint { gap: 5px; margin-top: 5px; font-size: .56rem; }
+      .touch-gesture-hint small { display: none; }
+      .mobile-controls { gap: 5px; margin-top: 5px; }
+      .mode-button { min-height: 36px; padding-inline: 8px; }
+      .action-button { min-height: 40px; padding-inline: 8px; }
+      .action-button strong { font-size: .8rem; }
+      .footer-note { display: none; }
+
+      .overlay { place-items: start center; padding: 6px; }
+      .modal {
+        max-height: calc(100svh - 12px);
+        max-height: calc(100dvh - 12px);
+      }
+      .home-modal { width: min(980px, 100%); }
+      .home-shell {
+        grid-template-columns: minmax(200px, .72fr) minmax(320px, 1.28fr);
+        min-height: 0;
+      }
+      .home-brief {
+        min-height: 0;
+        padding: 15px 18px;
+        border-right: 1px solid var(--line);
+        border-bottom: 0;
+      }
+      .home-status { padding: 5px 8px; font-size: .48rem; }
+      .home-title { margin: 14px 0 7px; font-size: clamp(2.5rem, 7.4vw, 4rem); }
+      .home-copy { display: none; }
+      .home-records { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 3px; margin-top: 12px; }
+      .home-record { padding: 6px; }
+      .home-record span { font-size: .43rem; }
+      .home-record strong { margin-top: 4px; font-size: .78rem; }
+      .launch-panel { padding: 13px 16px calc(13px + env(safe-area-inset-bottom)); }
+      .launch-index { font-size: .52rem; }
+      .launch-panel h2 { margin: 6px 0 3px; font-size: 1.45rem; }
+      .launch-note { margin-bottom: 8px; font-size: .54rem; line-height: 1.3; }
+      .launch-form { gap: 7px; }
+      .launch-field { gap: 3px; }
+      .launch-field > span { font-size: .52rem; }
+      .launch-field small { font-size: .46rem; }
+      .launch-field input { min-height: 36px; padding-inline: 10px; font-size: .68rem; }
+      .launch-sound { min-height: 36px; padding-inline: 10px; }
+      .launch-sound button { min-height: 28px; }
+      .launch-submit { min-height: 42px; margin-top: 0; }
+      .launch-foot { margin-top: 7px; font-size: .48rem; }
+      .shop-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .offer-card { min-height: 160px; }
     }
 
     @media (prefers-reduced-motion: reduce) {
@@ -1569,7 +1687,7 @@
             </div>
             <button class="primary-button launch-submit" type="submit">开始游戏 →</button>
           </form>
-          <div class="launch-foot"><span id="home-storage-state">Local record / 检测中</span><span id="home-version">v0.8.0</span></div>
+          <div class="launch-foot"><span id="home-storage-state">Local record / 检测中</span><span id="home-version">v0.8.1</span></div>
         </div>
       </div>
     </section>
@@ -1661,7 +1779,7 @@
 
     // 所有会影响平衡的数值只允许出现在 CONFIG 内。
     const CONFIG = Object.freeze({
-      version: "0.8.0",
+      version: "0.8.1",
       board: {
         baseSide: 9,
         maxShortSide: 12,
@@ -1834,6 +1952,7 @@
       soundToggle: $("#sound-toggle"),
       storageState: $("#storage-state"),
       homeOverlay: $("#home-overlay"),
+      homeModal: $(".home-modal"),
       homeForm: $("#home-form"),
       homeSeed: $("#home-seed"),
       homeFloor: $("#home-floor"),
@@ -2265,8 +2384,12 @@
       closeOverlay(dom.gameoverOverlay);
       clearRunUrl();
       renderHome();
+      dom.homeOverlay.scrollTop = 0;
+      dom.homeModal.scrollTop = 0;
       openOverlay(dom.homeOverlay);
-      requestAnimationFrame(() => dom.homeSeed.focus());
+      if (matchMedia("(min-width: 901px) and (hover: hover) and (pointer: fine)").matches) {
+        requestAnimationFrame(() => dom.homeSeed.focus());
+      }
     }
 
     function renderControlMenu() {
@@ -2492,7 +2615,7 @@
       dom.board.appendChild(fragment);
     }
 
-    const desktopBoardQuery = matchMedia("(min-width: 901px)");
+    const desktopBoardQuery = matchMedia("(min-width: 901px), (orientation: landscape) and (min-width: 520px)");
 
     function boardDisplayDimensions() {
       const transposed = desktopBoardQuery.matches && game.rows !== game.cols;
