@@ -1313,7 +1313,7 @@
 
     // 所有会影响平衡的数值只允许出现在 CONFIG 内。
     const CONFIG = Object.freeze({
-      version: "0.7.1",
+      version: "0.8.0-dev",
       board: {
         baseSide: 9,
         maxShortSide: 12,
@@ -1429,8 +1429,10 @@
     const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
     const urlParams = new URLSearchParams(location.search);
     const debugEnabled = urlParams.get("debug") === "1";
-    const debugStartFloor = debugEnabled
-      ? Math.max(1, Math.floor(Number(urlParams.get("floor")) || 1))
+    const requestedRunSeed = urlParams.get("seed")?.trim() || null;
+    const requestedFloorValue = Math.floor(Number(urlParams.get("floor")));
+    const requestedStartFloor = Number.isSafeInteger(requestedFloorValue) && requestedFloorValue >= 1
+      ? requestedFloorValue
       : 1;
 
     const dom = {
@@ -1695,8 +1697,8 @@
       game = {
         mode: "playing",
         inputMode: "reveal",
-        runSeed: createRunSeed(),
-        floor: debugStartFloor,
+        runSeed: requestedRunSeed || createRunSeed(),
+        floor: requestedStartFloor,
         hp: CONFIG.hp.max,
         gold: 0,
         combo: 0,
@@ -1723,7 +1725,7 @@
       dom.gameoverOverlay.classList.remove("open");
       dom.shopOverlay.setAttribute("aria-hidden", "true");
       dom.gameoverOverlay.setAttribute("aria-hidden", "true");
-      startFloor(debugStartFloor);
+      startFloor(requestedStartFloor);
     }
 
     function floorDimensions(floor) {
