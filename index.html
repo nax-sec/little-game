@@ -1125,6 +1125,13 @@
     .launch-field > span { display: flex; justify-content: space-between; gap: 12px; color: #b5c2c3; font: 800 .62rem/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; }
     .launch-field small { color: #586a6f; font-size: .55rem; letter-spacing: .02em; text-transform: none; }
 
+    .launch-tuning {
+      display: grid;
+      grid-template-columns: minmax(92px, .58fr) minmax(0, 1.42fr);
+      gap: 10px;
+      align-items: start;
+    }
+
     .launch-field input {
       width: 100%;
       min-height: 48px;
@@ -1139,6 +1146,57 @@
 
     .launch-field input::placeholder { color: #43545a; }
     .launch-field input:focus { border-color: rgba(217,255,67,.58); box-shadow: inset 3px 0 var(--acid); }
+
+    .mine-rate-control {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      min-width: 0;
+      min-height: 48px;
+      padding: 0 10px 0 13px;
+      border: 1px solid #324349;
+      border-radius: 9px;
+      background:
+        linear-gradient(90deg, rgba(100,186,255,.055), transparent 48%),
+        #070b0d;
+    }
+
+    .launch-field .mine-rate-control input {
+      flex: 1;
+      width: auto;
+      min-width: 0;
+      min-height: 0;
+      height: 22px;
+      padding: 0;
+      border: 0;
+      border-radius: 0;
+      outline: 0;
+      background: transparent;
+      box-shadow: none;
+      accent-color: var(--acid);
+      cursor: ew-resize;
+    }
+
+    .launch-field .mine-rate-control input:focus-visible {
+      outline: 1px solid rgba(217,255,67,.68);
+      outline-offset: 4px;
+      box-shadow: none;
+    }
+
+    .mine-rate-control output {
+      min-width: 46px;
+      color: var(--acid);
+      font: 900 .78rem/1 var(--mono);
+      letter-spacing: .015em;
+      text-align: right;
+    }
+
+    .mine-rate-meta {
+      display: block;
+      color: #607277;
+      font: 700 .52rem/1.3 var(--mono);
+      letter-spacing: .015em;
+    }
 
     .launch-sound {
       display: flex;
@@ -1155,8 +1213,97 @@
     }
 
     .launch-sound button { min-width: 92px; min-height: 32px; padding: 0 11px; border: 1px solid var(--line-hi); border-radius: 7px; background: #111a1e; color: var(--paper); cursor: pointer; font: 800 .61rem/1 var(--mono); }
-    .launch-submit { width: 100%; min-height: 54px; margin-top: 6px; font-size: .82rem; letter-spacing: .08em; text-transform: uppercase; }
+    .launch-actions { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(108px, .72fr); gap: 8px; margin-top: 6px; }
+    .launch-submit { width: 100%; min-height: 54px; margin-top: 0; font-size: .82rem; letter-spacing: .08em; text-transform: uppercase; }
+    .tutorial-launch { min-height: 54px; padding-inline: 10px; color: var(--blue); font: 900 .7rem/1 var(--mono); letter-spacing: .06em; }
     .launch-foot { display: flex; justify-content: space-between; gap: 12px; margin-top: 18px; color: #526267; font: 700 .54rem/1.45 var(--mono); letter-spacing: .06em; text-transform: uppercase; }
+    .mine-rate-reset {
+      padding: 0;
+      border: 0;
+      background: transparent;
+      color: #72858a;
+      cursor: pointer;
+      font: inherit;
+      letter-spacing: inherit;
+      text-decoration: underline;
+      text-decoration-color: #405157;
+      text-underline-offset: 4px;
+      text-transform: inherit;
+    }
+    .mine-rate-reset:hover { color: var(--acid); }
+    .mine-rate-reset:disabled { color: var(--acid); cursor: default; text-decoration: none; }
+
+    .tutorial-overlay { z-index: 110; background: rgba(2,5,6,.9); }
+    .tutorial-modal { width: min(850px, 100%); }
+    .tutorial-shell { display: grid; grid-template-columns: minmax(280px, .88fr) minmax(320px, 1.12fr); min-height: 510px; }
+    .tutorial-stage {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: clamp(22px, 4vw, 38px);
+      border-right: 1px solid var(--line);
+      background:
+        radial-gradient(circle at 50% 46%, rgba(217,255,67,.09), transparent 15rem),
+        linear-gradient(145deg, rgba(100,186,255,.06), transparent 52%),
+        #080d10;
+    }
+    .tutorial-stage-head { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 14px; color: #607277; font: 800 .55rem/1 var(--mono); letter-spacing: .1em; text-transform: uppercase; }
+    .tutorial-stage-head strong { color: var(--danger); }
+    .tutorial-board {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      width: min(100%, 300px);
+      margin: 0 auto;
+      padding: 6px;
+      gap: 4px;
+      border: 1px solid #405158;
+      border-radius: 13px;
+      background: #050809;
+      box-shadow: 0 24px 70px rgba(0,0,0,.55), inset 0 0 24px rgba(100,186,255,.04);
+    }
+    .tutorial-cell {
+      position: relative;
+      aspect-ratio: 1;
+      min-width: 0;
+      padding: 0;
+      border: 1px solid #35464b;
+      border-radius: 7px;
+      background: linear-gradient(145deg, #223036, #11191d);
+      color: var(--paper);
+      cursor: pointer;
+      font: 900 clamp(.9rem, 4vw, 1.35rem)/1 var(--mono);
+      transition: border-color .14s, background .14s, transform .14s, box-shadow .14s;
+    }
+    .tutorial-cell:hover { border-color: #63767a; transform: translateY(-1px); }
+    .tutorial-cell.revealed { border-color: #233136; background: #0b1114; cursor: default; transform: none; }
+    .tutorial-cell.flagged { color: var(--amber); border-color: rgba(255,184,63,.65); background: rgba(255,184,63,.08); }
+    .tutorial-cell.target {
+      z-index: 1;
+      border-color: var(--acid);
+      box-shadow: 0 0 0 2px rgba(217,255,67,.15), 0 0 23px rgba(217,255,67,.23);
+      animation: tutorialPulse 1s ease-in-out infinite alternate;
+    }
+    .tutorial-cell.target-mine { border-color: var(--amber); box-shadow: 0 0 0 2px rgba(255,184,63,.15), 0 0 23px rgba(255,184,63,.24); }
+    .tutorial-cell.number-1 { color: #6ec7ff; }
+    .tutorial-cell.mine-preview { color: var(--danger); }
+    .tutorial-modes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; width: min(100%, 300px); margin: 12px auto 0; }
+    .tutorial-modes .mode-button { min-height: 42px; }
+    .tutorial-copy { display: flex; flex-direction: column; min-width: 0; padding: clamp(24px, 5vw, 48px); }
+    .tutorial-copy-head { display: flex; align-items: start; justify-content: space-between; gap: 18px; }
+    .tutorial-copy h2 { margin: 8px 0 0; font-size: clamp(1.8rem, 4vw, 3rem); line-height: .9; letter-spacing: -.05em; }
+    .tutorial-progress { position: relative; height: 4px; margin: 30px 0 25px; overflow: hidden; border-radius: 999px; background: #202d31; }
+    .tutorial-progress span { position: absolute; right: 0; bottom: 10px; color: #718388; font: 800 .55rem/1 var(--mono); letter-spacing: .08em; }
+    .tutorial-progress i { display: block; width: 25%; height: 100%; background: linear-gradient(90deg, var(--blue), var(--acid)); transition: width .24s ease; }
+    .tutorial-step-kicker { color: var(--acid); font: 850 .58rem/1 var(--mono); letter-spacing: .14em; text-transform: uppercase; }
+    .tutorial-copy h3 { margin: 13px 0 9px; font-size: 1.22rem; line-height: 1.1; }
+    .tutorial-copy p { margin: 0; color: #91a2a5; font: 650 .72rem/1.7 var(--mono); }
+    .tutorial-feedback { margin-top: 20px; padding: 12px 13px; border-left: 3px solid var(--blue); background: rgba(100,186,255,.06); color: #b7c8ca; font: 700 .62rem/1.5 var(--mono); }
+    .tutorial-complete-actions { margin-top: 20px; }
+    .tutorial-complete-actions[hidden] { display: none; }
+    .tutorial-complete-actions .primary-button { width: 100%; }
+    .tutorial-restart { margin-top: auto; padding: 16px 0 0; border: 0; background: transparent; color: #687a7e; cursor: pointer; font: 750 .58rem/1 var(--mono); text-align: left; text-decoration: underline; text-underline-offset: 4px; }
+
+    @keyframes tutorialPulse { to { filter: brightness(1.2); transform: translateY(-2px); } }
 
     .control-overlay { z-index: 75; }
     .control-modal { width: min(620px, 100%); }
@@ -1373,6 +1520,13 @@
       .launch-panel { padding: 25px 20px calc(25px + env(safe-area-inset-bottom)); }
       .launch-note { margin-bottom: 22px; }
       .launch-foot { flex-wrap: wrap; }
+      .tutorial-shell { grid-template-columns: 1fr; min-height: 0; }
+      .tutorial-stage { padding: 20px; border-right: 0; border-bottom: 1px solid var(--line); }
+      .tutorial-board { width: min(100%, 250px); }
+      .tutorial-modes { width: min(100%, 250px); }
+      .tutorial-copy { padding: 22px 20px calc(22px + env(safe-area-inset-bottom)); }
+      .tutorial-progress { margin: 26px 0 21px; }
+      .tutorial-restart { margin-top: 20px; }
       .control-confirm { grid-template-columns: 1fr 1fr; }
       .control-confirm p { grid-column: 1 / -1; }
     }
@@ -1402,6 +1556,13 @@
       .home-record span { font-size: .45rem; }
       .home-record strong { font-size: .82rem; }
       .launch-panel { padding-inline: 17px; }
+      .launch-tuning { grid-template-columns: minmax(86px, .55fr) minmax(0, 1.45fr); gap: 7px; }
+      .mine-rate-control { gap: 7px; padding-inline: 8px; }
+      .mine-rate-control output { min-width: 38px; font-size: .7rem; }
+      .mine-rate-meta { font-size: .47rem; }
+      .launch-actions { grid-template-columns: minmax(0, 1.25fr) minmax(96px, .75fr); }
+      .tutorial-launch { font-size: .64rem; }
+      .tutorial-board, .tutorial-modes { width: min(100%, 220px); }
       .restart-actions { grid-template-columns: 1fr; }
       .restart-button { min-height: 66px; }
     }
@@ -1420,6 +1581,7 @@
       .launch-form { gap: 10px; }
       .launch-field { gap: 5px; }
       .launch-field input { min-height: 42px; }
+      .mine-rate-control { min-height: 42px; }
       .launch-sound { min-height: 42px; }
       .launch-submit { min-height: 48px; margin-top: 0; }
       .launch-foot { margin-top: 10px; }
@@ -1507,10 +1669,33 @@
       .launch-field > span { font-size: .52rem; }
       .launch-field small { font-size: .46rem; }
       .launch-field input { min-height: 36px; padding-inline: 10px; font-size: .68rem; }
+      .launch-tuning { grid-template-columns: minmax(86px, .48fr) minmax(0, 1.52fr); gap: 7px; }
+      .mine-rate-control { min-height: 36px; padding-inline: 8px; }
+      .mine-rate-meta { display: none; }
       .launch-sound { min-height: 36px; padding-inline: 10px; }
       .launch-sound button { min-height: 28px; }
       .launch-submit { min-height: 42px; margin-top: 0; }
+      .tutorial-launch { min-height: 42px; }
       .launch-foot { margin-top: 7px; font-size: .48rem; }
+      .tutorial-modal { width: min(820px, 100%); }
+      .tutorial-shell { grid-template-columns: minmax(230px, .86fr) minmax(300px, 1.14fr); min-height: 0; }
+      .tutorial-stage { padding: 12px 16px; border-right: 1px solid var(--line); border-bottom: 0; }
+      .tutorial-stage-head { margin-bottom: 7px; font-size: .46rem; }
+      .tutorial-board { width: min(100%, 210px); padding: 4px; gap: 3px; }
+      .tutorial-cell { border-radius: 5px; font-size: .88rem; }
+      .tutorial-modes { width: min(100%, 210px); margin-top: 7px; }
+      .tutorial-modes .mode-button { min-height: 34px; }
+      .tutorial-copy { padding: 15px 18px; }
+      .tutorial-copy .eyebrow { font-size: .48rem; }
+      .tutorial-copy h2 { margin-top: 5px; font-size: 1.55rem; }
+      .tutorial-progress { margin: 20px 0 15px; }
+      .tutorial-step-kicker { font-size: .5rem; }
+      .tutorial-copy h3 { margin: 8px 0 5px; font-size: 1rem; }
+      .tutorial-copy p { font-size: .6rem; line-height: 1.5; }
+      .tutorial-feedback { margin-top: 10px; padding: 8px 10px; font-size: .53rem; }
+      .tutorial-complete-actions { margin-top: 10px; }
+      .tutorial-complete-actions .primary-button { min-height: 38px; }
+      .tutorial-restart { margin-top: auto; padding-top: 8px; font-size: .5rem; }
       .shop-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .offer-card { min-height: 160px; }
     }
@@ -1677,17 +1862,70 @@
               <span>Run Seed <small>可选 · 最多 64 字符</small></span>
               <input id="home-seed" name="seed" type="text" maxlength="64" autocomplete="off" spellcheck="false" placeholder="RANDOM / 随机生成">
             </label>
-            <label class="launch-field">
-              <span>起始楼层 <small>F1–F15</small></span>
-              <input id="home-floor" name="floor" type="number" min="1" max="15" step="1" inputmode="numeric" value="1">
-            </label>
+            <div class="launch-tuning">
+              <label class="launch-field">
+                <span>起始楼层 <small>F1–F15</small></span>
+                <input id="home-floor" name="floor" type="number" min="1" max="15" step="1" inputmode="numeric" value="1">
+              </label>
+              <label class="launch-field mine-rate-field">
+                <span>基础雷率 <small>12%–18%</small></span>
+                <div class="mine-rate-control">
+                  <input id="home-mine-rate" name="mines" type="range" min="12" max="18" step="1" value="15" aria-describedby="mine-rate-meta">
+                  <output id="mine-rate-output" for="home-mine-rate">15%</output>
+                </div>
+                <small class="mine-rate-meta" id="mine-rate-meta">标准默认 · 每层 +0.5% · 最高 22%</small>
+              </label>
+            </div>
             <div class="launch-sound">
               <span>Sound channel / 声音</span>
               <button id="home-sound-toggle" type="button">声音开启</button>
             </div>
-            <button class="primary-button launch-submit" type="submit">开始游戏 →</button>
+            <div class="launch-actions">
+              <button class="primary-button launch-submit" type="submit">开始游戏 →</button>
+              <button class="secondary-button tutorial-launch" id="open-tutorial" type="button">扫雷教学</button>
+            </div>
           </form>
-          <div class="launch-foot"><span id="home-storage-state">Local record / 检测中</span><span id="home-version">v0.8.1</span></div>
+          <div class="launch-foot">
+            <span id="home-storage-state">Local record / 检测中</span>
+            <button class="mine-rate-reset" id="reset-mine-rate" type="button">恢复标准 15%</button>
+            <span id="home-version">v0.8.2</span>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div class="overlay tutorial-overlay" id="tutorial-overlay" aria-hidden="true">
+    <section class="modal tutorial-modal" role="dialog" aria-modal="true" aria-labelledby="tutorial-title">
+      <div class="tutorial-shell">
+        <div class="tutorial-stage">
+          <div class="tutorial-stage-head">
+            <span>Training grid / 固定教学关</span>
+            <strong id="tutorial-mine-count">雷 ×1</strong>
+          </div>
+          <div class="tutorial-board" id="tutorial-board" role="grid" aria-label="4乘4扫雷教学棋盘"></div>
+          <div class="tutorial-modes" aria-label="教学操作模式">
+            <button class="mode-button active" id="tutorial-reveal-mode" type="button">◇ 翻开</button>
+            <button class="mode-button" id="tutorial-flag-mode" type="button">⚑ 插旗</button>
+          </div>
+        </div>
+        <div class="tutorial-copy">
+          <div class="tutorial-copy-head">
+            <div>
+              <div class="eyebrow">Minesweeper basics / 扫雷入门</div>
+              <h2 id="tutorial-title">四步学会扫雷</h2>
+            </div>
+            <button class="icon-button" id="tutorial-close" type="button" aria-label="关闭教学" title="关闭教学">×</button>
+          </div>
+          <div class="tutorial-progress"><span id="tutorial-progress-label">01 / 04</span><i id="tutorial-progress-bar"></i></div>
+          <div class="tutorial-step-kicker" id="tutorial-step-kicker">第一步 · 翻开安全区</div>
+          <h3 id="tutorial-step-title">先从空白区域开始</h3>
+          <p id="tutorial-step-copy">点击棋盘右下角发光的格子。空白格会自动展开相连的安全区域，教学关的第一步不会踩雷。</p>
+          <div class="tutorial-feedback" id="tutorial-feedback" role="status" aria-live="polite">跟随发光格操作；点错不会扣血。</div>
+          <div class="tutorial-complete-actions" id="tutorial-complete-actions" hidden>
+            <button class="primary-button" id="tutorial-finish" type="button">完成教学 · 返回设置</button>
+          </div>
+          <button class="tutorial-restart" id="tutorial-restart" type="button">重新开始教学</button>
         </div>
       </div>
     </section>
@@ -1779,12 +2017,14 @@
 
     // 所有会影响平衡的数值只允许出现在 CONFIG 内。
     const CONFIG = Object.freeze({
-      version: "0.8.1",
+      version: "0.8.2",
       board: {
         baseSide: 9,
         maxShortSide: 12,
         maxLongSide: 16,
         baseMineRate: 0.15,
+        minBaseMineRate: 0.12,
+        maxBaseMineRate: 0.18,
         mineRateStep: 0.005,
         maxMineRate: 0.22,
         firstSafeRadius: 1,
@@ -1888,7 +2128,8 @@
         hitGain: 0.12
       },
       storageKey: "mine-rush-records-v1",
-      soundKey: "mine-rush-muted-v1"
+      soundKey: "mine-rush-muted-v1",
+      mineRateKey: "mine-rush-base-mine-rate-v1"
     });
 
     const $ = (selector, root = document) => root.querySelector(selector);
@@ -1897,6 +2138,15 @@
     const roundMoney = value => Math.round(value);
     const displayMoney = value => Math.floor(value + 1e-7).toLocaleString("zh-CN");
     const padFloor = value => String(value).padStart(2, "0");
+    const defaultMinePercent = Math.round(CONFIG.board.baseMineRate * 100);
+    const minMinePercent = Math.round(CONFIG.board.minBaseMineRate * 100);
+    const maxMinePercent = Math.round(CONFIG.board.maxBaseMineRate * 100);
+    const mineCapDeltaPercent = Math.round((CONFIG.board.maxMineRate - CONFIG.board.baseMineRate) * 100);
+    const normalizeMinePercent = value => {
+      if (value === null || value === undefined || String(value).trim() === "") return defaultMinePercent;
+      const parsed = Math.round(Number(value));
+      return Number.isFinite(parsed) ? clamp(parsed, minMinePercent, maxMinePercent) : defaultMinePercent;
+    };
     const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
     const urlParams = new URLSearchParams(location.search);
     const debugEnabled = urlParams.get("debug") === "1";
@@ -1907,6 +2157,7 @@
     const requestedStartFloor = Number.isSafeInteger(requestedFloorValue) && requestedFloorValue >= 1
       ? requestedFloorValue
       : 1;
+    const requestedMinePercent = normalizeMinePercent(urlParams.get("mines"));
     const autoStartRequested = urlParams.has("seed")
       || urlParams.has("floor")
       || (debugEnabled && urlParams.has("testSeed"));
@@ -1956,6 +2207,11 @@
       homeForm: $("#home-form"),
       homeSeed: $("#home-seed"),
       homeFloor: $("#home-floor"),
+      homeMineRate: $("#home-mine-rate"),
+      mineRateOutput: $("#mine-rate-output"),
+      mineRateMeta: $("#mine-rate-meta"),
+      resetMineRate: $("#reset-mine-rate"),
+      openTutorial: $("#open-tutorial"),
       homeSoundToggle: $("#home-sound-toggle"),
       homeBestFloor: $("#home-best-floor"),
       homeBestCombo: $("#home-best-combo"),
@@ -1963,6 +2219,21 @@
       homeRuns: $("#home-runs"),
       homeStorageState: $("#home-storage-state"),
       homeVersion: $("#home-version"),
+      tutorialOverlay: $("#tutorial-overlay"),
+      tutorialBoard: $("#tutorial-board"),
+      tutorialMineCount: $("#tutorial-mine-count"),
+      tutorialRevealMode: $("#tutorial-reveal-mode"),
+      tutorialFlagMode: $("#tutorial-flag-mode"),
+      tutorialClose: $("#tutorial-close"),
+      tutorialProgressLabel: $("#tutorial-progress-label"),
+      tutorialProgressBar: $("#tutorial-progress-bar"),
+      tutorialStepKicker: $("#tutorial-step-kicker"),
+      tutorialStepTitle: $("#tutorial-step-title"),
+      tutorialStepCopy: $("#tutorial-step-copy"),
+      tutorialFeedback: $("#tutorial-feedback"),
+      tutorialCompleteActions: $("#tutorial-complete-actions"),
+      tutorialFinish: $("#tutorial-finish"),
+      tutorialRestart: $("#tutorial-restart"),
       controlOverlay: $("#control-overlay"),
       controlClose: $("#control-close"),
       controlRunline: $("#control-runline"),
@@ -2018,8 +2289,22 @@
       catch (_) { return fallback; }
     }
 
+    function loadMineRatePreference() {
+      const raw = storage.get(CONFIG.mineRateKey);
+      return raw === null ? defaultMinePercent : normalizeMinePercent(raw);
+    }
+
+    function saveMineRatePreference(minePercent) {
+      storage.set(CONFIG.mineRateKey, String(normalizeMinePercent(minePercent)));
+    }
+
     let records = loadRecords();
-    let launchSettings = { seed: requestedRunSeed || "", floor: requestedStartFloor };
+    let launchSettings = {
+      seed: requestedRunSeed || "",
+      floor: requestedStartFloor,
+      minePercent: urlParams.has("mines") ? requestedMinePercent : loadMineRatePreference()
+    };
+    let tutorial = null;
 
     function hashString(text) {
       let hash = 2166136261;
@@ -2221,10 +2506,11 @@
       return value;
     }
 
-    function syncRunUrl(seed, floor) {
+    function syncRunUrl(seed, floor, minePercent = launchSettings.minePercent) {
       const nextUrl = new URL(location.href);
       nextUrl.searchParams.set("seed", seed);
       nextUrl.searchParams.set("floor", String(floor));
+      nextUrl.searchParams.set("mines", String(normalizeMinePercent(minePercent)));
       nextUrl.searchParams.delete("testSeed");
       history.replaceState(null, "", nextUrl);
     }
@@ -2233,6 +2519,7 @@
       const nextUrl = new URL(location.href);
       nextUrl.searchParams.delete("seed");
       nextUrl.searchParams.delete("floor");
+      nextUrl.searchParams.delete("mines");
       nextUrl.searchParams.delete("testSeed");
       history.replaceState(null, "", nextUrl);
     }
@@ -2247,9 +2534,10 @@
       overlay.setAttribute("aria-hidden", "false");
     }
 
-    function newRun({ seed = "", floor = launchSettings.floor, syncUrl = true } = {}) {
+    function newRun({ seed = "", floor = launchSettings.floor, minePercent = launchSettings.minePercent, syncUrl = true } = {}) {
       const normalizedFloor = Number.isSafeInteger(Number(floor)) && Number(floor) >= 1 ? Number(floor) : 1;
       const normalizedSeed = String(seed || "").trim().slice(0, 64);
+      const normalizedMinePercent = normalizeMinePercent(minePercent);
       sound.stopFrenzyBeat();
       uiPaused = false;
       uiPauseStartedAt = 0;
@@ -2263,6 +2551,7 @@
         runSeed: normalizedSeed || createRunSeed(),
         startFloor: normalizedFloor,
         floor: normalizedFloor,
+        baseMinePercent: normalizedMinePercent,
         hp: CONFIG.hp.max,
         gold: 0,
         combo: 0,
@@ -2292,7 +2581,7 @@
       closeOverlay(dom.shopOverlay);
       closeOverlay(dom.gameoverOverlay);
       dom.app.removeAttribute("aria-hidden");
-      if (syncUrl) syncRunUrl(game.runSeed, game.startFloor);
+      if (syncUrl) syncRunUrl(game.runSeed, game.startFloor, game.baseMinePercent);
       startFloor(normalizedFloor);
     }
 
@@ -2300,7 +2589,7 @@
       const previousSeed = game?.runSeed || launchSettings.seed;
       const floor = game?.startFloor || launchSettings.floor;
       if (finalizeRecord) finalizePendingGameOverRecord();
-      newRun({ seed: createDifferentRunSeed(previousSeed), floor });
+      newRun({ seed: createDifferentRunSeed(previousSeed), floor, minePercent: game?.baseMinePercent ?? launchSettings.minePercent });
     }
 
     function restartCurrentFloor() {
@@ -2323,7 +2612,7 @@
       closeOverlay(dom.shopOverlay);
       closeOverlay(dom.gameoverOverlay);
       dom.app.removeAttribute("aria-hidden");
-      syncRunUrl(game.runSeed, game.floor);
+      syncRunUrl(game.runSeed, game.floor, game.baseMinePercent);
       buildBoard();
       renderAll();
       showToast(`第 ${game.floor} 层重新部署 · 已换 Seed · 本层重开已使用`, "info");
@@ -2348,9 +2637,243 @@
       pendingGameOverRecord = null;
     }
 
+    function mineRateDescriptor(minePercent) {
+      if (minePercent <= 13) return "舒缓";
+      if (minePercent === 14) return "偏低";
+      if (minePercent === defaultMinePercent) return "标准默认";
+      if (minePercent === 16) return "偏高";
+      return "高压";
+    }
+
+    function renderMineRateSetting(minePercent = launchSettings.minePercent) {
+      const normalized = normalizeMinePercent(minePercent);
+      const capPercent = normalized + mineCapDeltaPercent;
+      dom.homeMineRate.min = String(minMinePercent);
+      dom.homeMineRate.max = String(maxMinePercent);
+      dom.homeMineRate.value = String(normalized);
+      dom.mineRateOutput.value = `${normalized}%`;
+      dom.mineRateOutput.textContent = `${normalized}%`;
+      dom.mineRateMeta.textContent = `${mineRateDescriptor(normalized)} · 每层 +0.5% · 最高 ${capPercent}%`;
+      dom.resetMineRate.disabled = normalized === defaultMinePercent;
+      dom.resetMineRate.textContent = normalized === defaultMinePercent
+        ? `标准默认 ${defaultMinePercent}%`
+        : `恢复标准 ${defaultMinePercent}%`;
+    }
+
+    const tutorialSteps = [
+      {
+        kicker: "第一步 · 翻开安全区",
+        title: "先从空白区域开始",
+        copy: "点击棋盘右下角发光的格子。空白格会自动展开相连的安全区域，教学关的第一步不会踩雷。",
+        target: 15
+      },
+      {
+        kicker: "第二步 · 读懂数字并插旗",
+        title: "数字表示周围八格的雷数",
+        copy: "上下两组蓝色 1 与“全图仅 1 颗雷”共同锁定了发光格。切换到插旗模式，再点击它标记地雷。",
+        target: 5
+      },
+      {
+        kicker: "第三步 · 用数字格快速展开",
+        title: "旗数满足数字，就能放心展开",
+        copy: "这个 1 周围已经插好 1 面旗。切回翻开模式，点击发光的数字格，它会一次翻开其余相邻格。",
+        target: 2
+      },
+      {
+        kicker: "第四步 · 完成清扫",
+        title: "同样的规则再用一次",
+        copy: "新出现的 1 也已经被那面旗满足。点击发光数字格，翻开最后两个安全格。",
+        target: 1
+      }
+    ];
+
+    function tutorialNeighbors(index) {
+      const rows = 4;
+      const cols = 4;
+      const row = Math.floor(index / cols);
+      const col = index % cols;
+      const result = [];
+      for (let dr = -1; dr <= 1; dr += 1) {
+        for (let dc = -1; dc <= 1; dc += 1) {
+          if (dr === 0 && dc === 0) continue;
+          const nextRow = row + dr;
+          const nextCol = col + dc;
+          if (nextRow >= 0 && nextRow < rows && nextCol >= 0 && nextCol < cols) result.push(nextRow * cols + nextCol);
+        }
+      }
+      return result;
+    }
+
+    function createTutorialState() {
+      const mines = new Set([5]);
+      return {
+        step: 0,
+        mode: "reveal",
+        feedback: "跟随发光格操作；点错不会扣血。",
+        cells: Array.from({ length: 16 }, (_, index) => ({
+          mine: mines.has(index),
+          adjacent: tutorialNeighbors(index).filter(next => mines.has(next)).length,
+          revealed: false,
+          flagged: false
+        }))
+      };
+    }
+
+    function revealTutorialGroup(firstIndex) {
+      const queue = [firstIndex];
+      const opened = [];
+      const seen = new Set();
+      while (queue.length) {
+        const index = queue.shift();
+        if (seen.has(index)) continue;
+        seen.add(index);
+        const cell = tutorial.cells[index];
+        if (!cell || cell.mine || cell.flagged || cell.revealed) continue;
+        cell.revealed = true;
+        opened.push(index);
+        if (cell.adjacent === 0) queue.push(...tutorialNeighbors(index));
+      }
+      return opened;
+    }
+
+    function tutorialChord(index) {
+      const cell = tutorial.cells[index];
+      if (!cell?.revealed || cell.adjacent <= 0) return [];
+      const nearby = tutorialNeighbors(index);
+      const flagged = nearby.filter(next => tutorial.cells[next].flagged).length;
+      if (flagged !== cell.adjacent) return [];
+      return nearby.flatMap(next => revealTutorialGroup(next));
+    }
+
+    function setTutorialMode(mode) {
+      if (!tutorial || tutorial.step >= tutorialSteps.length) return;
+      tutorial.mode = mode === "flag" ? "flag" : "reveal";
+      tutorial.feedback = tutorial.mode === "flag"
+        ? "插旗模式：点击你判断为地雷的盖住格。"
+        : "翻开模式：点击安全格；已开的数字格可以执行快速展开。";
+      renderTutorial();
+    }
+
+    function renderTutorial() {
+      if (!tutorial) return;
+      const complete = tutorial.step >= tutorialSteps.length;
+      const step = complete ? null : tutorialSteps[tutorial.step];
+      dom.tutorialBoard.innerHTML = tutorial.cells.map((cell, index) => {
+        const classes = ["tutorial-cell"];
+        let text = "";
+        let label = `第 ${Math.floor(index / 4) + 1} 行第 ${index % 4 + 1} 列`;
+        if (cell.revealed) {
+          classes.push("revealed");
+          if (cell.adjacent > 0) {
+            text = String(cell.adjacent);
+            classes.push(`number-${cell.adjacent}`);
+            label += `，数字 ${cell.adjacent}`;
+          } else label += "，空白安全格";
+        } else if (cell.flagged) {
+          classes.push("flagged");
+          text = "⚑";
+          label += "，已插旗";
+        } else label += "，未翻开";
+        if (!complete && index === step.target) {
+          classes.push("target");
+          if (tutorial.step === 1) classes.push("target-mine");
+          label += "，当前教学目标";
+        }
+        return `<button class="${classes.join(" ")}" type="button" role="gridcell" data-tutorial-index="${index}" aria-label="${label}">${text}</button>`;
+      }).join("");
+
+      const flaggedCount = tutorial.cells.filter(cell => cell.flagged).length;
+      dom.tutorialMineCount.textContent = `雷 ×1 · 旗 ${flaggedCount}/1`;
+      dom.tutorialRevealMode.classList.toggle("active", tutorial.mode === "reveal");
+      dom.tutorialFlagMode.classList.toggle("active", tutorial.mode === "flag");
+      dom.tutorialRevealMode.disabled = complete;
+      dom.tutorialFlagMode.disabled = complete;
+      dom.tutorialFeedback.textContent = tutorial.feedback;
+      dom.tutorialCompleteActions.hidden = !complete;
+      if (complete) {
+        dom.tutorialProgressLabel.textContent = "04 / 04 · COMPLETE";
+        dom.tutorialProgressBar.style.width = "100%";
+        dom.tutorialStepKicker.textContent = "训练完成 · 不计正式纪录";
+        dom.tutorialStepTitle.textContent = "你已经掌握扫雷的核心动作";
+        dom.tutorialStepCopy.textContent = "数字等于周围八格的雷数；确定地雷就插旗，旗数满足数字后点击数字格，可以快速翻开其余邻格。正式局还会加入 HP、Combo、余势和撤离。";
+      } else {
+        dom.tutorialProgressLabel.textContent = `0${tutorial.step + 1} / 04`;
+        dom.tutorialProgressBar.style.width = `${(tutorial.step + 1) * 25}%`;
+        dom.tutorialStepKicker.textContent = step.kicker;
+        dom.tutorialStepTitle.textContent = step.title;
+        dom.tutorialStepCopy.textContent = step.copy;
+      }
+    }
+
+    function handleTutorialCell(index, forcedMode = null) {
+      if (!tutorial || tutorial.step >= tutorialSteps.length) return;
+      const step = tutorialSteps[tutorial.step];
+      const mode = forcedMode || tutorial.mode;
+      if (index !== step.target) {
+        tutorial.feedback = "这一步先操作发光格；教学关不会因为点错而扣血。";
+        renderTutorial();
+        return;
+      }
+      if (tutorial.step === 0) {
+        if (mode !== "reveal") {
+          tutorial.feedback = "先切回翻开模式，再点击右下角发光格。";
+          renderTutorial();
+          return;
+        }
+        const opened = revealTutorialGroup(index);
+        tutorial.step = 1;
+        tutorial.feedback = `空白展开成功，一次翻开 ${opened.length} 个安全格。现在观察蓝色数字 1。`;
+      } else if (tutorial.step === 1) {
+        if (mode !== "flag") {
+          tutorial.feedback = "这是地雷格：先选择“插旗”，再点击它；教学中不会让你误踩。";
+          renderTutorial();
+          return;
+        }
+        tutorial.cells[index].flagged = true;
+        tutorial.mode = "reveal";
+        tutorial.step = 2;
+        tutorial.feedback = "插旗正确。旗只是标记，不会自动翻开其他格；接下来点击发光数字 1。";
+      } else if (tutorial.step === 2) {
+        if (mode !== "reveal") {
+          tutorial.feedback = "数字格要在翻开模式下点击，才会执行快速展开。";
+          renderTutorial();
+          return;
+        }
+        const opened = tutorialChord(index);
+        if (!opened.length) return;
+        tutorial.step = 3;
+        tutorial.feedback = "快速展开成功：新出现的 1 仍被同一面旗满足。";
+      } else if (tutorial.step === 3) {
+        if (mode !== "reveal") {
+          tutorial.feedback = "切回翻开模式，再点击发光数字格完成清扫。";
+          renderTutorial();
+          return;
+        }
+        tutorialChord(index);
+        tutorial.step = 4;
+        tutorial.feedback = "教学关清扫完成。这里不计金币、楼层或历史纪录。";
+      }
+      renderTutorial();
+    }
+
+    function openTutorial() {
+      if (!dom.homeOverlay.classList.contains("open")) return;
+      tutorial = createTutorialState();
+      renderTutorial();
+      openOverlay(dom.tutorialOverlay);
+      requestAnimationFrame(() => dom.tutorialBoard.querySelector(".target")?.focus());
+    }
+
+    function closeTutorial() {
+      closeOverlay(dom.tutorialOverlay);
+      tutorial = null;
+      requestAnimationFrame(() => dom.openTutorial.focus());
+    }
+
     function renderHome() {
       dom.homeSeed.value = launchSettings.seed;
       dom.homeFloor.value = String(launchSettings.floor);
+      renderMineRateSetting();
       dom.homeBestFloor.textContent = records.bestFloor || "—";
       dom.homeBestCombo.textContent = records.bestCombo || "—";
       dom.homeBestGold.textContent = records.bestGold ? displayMoney(records.bestGold) : "—";
@@ -2382,6 +2905,8 @@
       closeOverlay(dom.controlOverlay);
       closeOverlay(dom.shopOverlay);
       closeOverlay(dom.gameoverOverlay);
+      closeOverlay(dom.tutorialOverlay);
+      tutorial = null;
       clearRunUrl();
       renderHome();
       dom.homeOverlay.scrollTop = 0;
@@ -2394,7 +2919,7 @@
 
     function renderControlMenu() {
       if (!game) return;
-      dom.controlRunline.textContent = `F${game.floor} · SEED ${game.runSeed} · 本层重开 ${game.floorRestartUsed ? "0/1" : "1/1"}`;
+      dom.controlRunline.textContent = `F${game.floor} · SEED ${game.runSeed} · 基础雷率 ${game.baseMinePercent}% · 本层重开 ${game.floorRestartUsed ? "0/1" : "1/1"}`;
       dom.restartFloor.disabled = game.floorRestartUsed;
       const floorTitle = $("strong", dom.restartFloor);
       const floorCopy = $("small", dom.restartFloor);
@@ -2464,7 +2989,9 @@
     }
 
     function floorMineRate(floor) {
-      return Math.min(CONFIG.board.baseMineRate + CONFIG.board.mineRateStep * (floor - 1), CONFIG.board.maxMineRate);
+      const baseMineRate = (game?.baseMinePercent ?? defaultMinePercent) / 100;
+      const capMineRate = baseMineRate + (CONFIG.board.maxMineRate - CONFIG.board.baseMineRate);
+      return Math.min(baseMineRate + CONFIG.board.mineRateStep * (floor - 1), capMineRate);
     }
 
     function startFloor(floor) {
@@ -2525,6 +3052,7 @@
         cols: game.cols,
         totalCells: game.totalCells,
         safeCount: game.safeCount,
+        baseMinePercent: game.baseMinePercent,
         mineRate: game.mineRate,
         startAt: performance.now(),
         durationSeconds: 0,
@@ -4224,7 +4752,7 @@
           ? stats.rescueEvents.map(event => `${(Number(event.revealRatio || 0) * 100).toFixed(1)}%/${event.remainingSafe}`).join(",")
           : "—";
         return `<div class="debug-floor">
-          <strong>F${stats.floor} · ${stats.cols}×${stats.rows} · ${stats.result} · ${stats.durationSeconds.toFixed(1)}s</strong><br>
+          <strong>F${stats.floor} · ${stats.cols}×${stats.rows} · 雷率 ${(Number(stats.mineRate || 0) * 100).toFixed(1)}%（基础 ${stats.baseMinePercent ?? defaultMinePercent}%） · ${stats.result} · ${stats.durationSeconds.toFixed(1)}s</strong><br>
           score=${stats.score} grade=${stats.grade} maxCombo=${stats.maxCombo} frenzyBase=${stats.frenzyBaseSeconds}s<br>
           progress: revealed=${(Number(stats.revealRatio || 0) * 100).toFixed(1)}% (${stats.revealedSafe || 0}/${stats.safeCount}) target@=${targetReach}<br>
           economy: first=${stats.firstOpenCount} [${stats.firstCascadeMin}-${stats.firstCascadeLimit}] (${(Number(stats.firstOpenRatio || 0) * 100).toFixed(1)}%) shape=${stats.firstOpenCount}/${stats.firstCascadeBoundingCells} (${(Number(stats.firstCascadeFillRatio || 0) * 100).toFixed(0)}%)${stats.firstCascadeSolidRect ? " RECT" : ""} opening=${stats.openingHasContinuation ? `${stats.openingForcedMineCount}F→${stats.openingForcedSafeCount}S` : "DEAD"} cascade=${stats.maxCascadeCells}/${stats.cascadeLimit} attempts=${stats.boardGenerationAttempts} potential=${stats.potential}/${stats.referencePotential} raw=${Number(stats.rawSeedIndex).toFixed(3)} quota=${Number(stats.seedIndex).toFixed(3)} target=${stats.target ?? "SCAN"} market=×${Number(stats.marketIndex).toFixed(3)} eval=${Number(stats.economyEvalMs).toFixed(1)}ms<br>
@@ -4528,12 +5056,41 @@
     dom.menuToggle.addEventListener("click", openControlMenu);
     dom.soundToggle.addEventListener("click", () => sound.toggle());
     dom.homeSoundToggle.addEventListener("click", () => sound.toggle());
+    dom.homeMineRate.addEventListener("input", () => {
+      launchSettings.minePercent = normalizeMinePercent(dom.homeMineRate.value);
+      saveMineRatePreference(launchSettings.minePercent);
+      renderMineRateSetting();
+    });
+    dom.resetMineRate.addEventListener("click", () => {
+      launchSettings.minePercent = defaultMinePercent;
+      saveMineRatePreference(defaultMinePercent);
+      renderMineRateSetting();
+    });
+    dom.openTutorial.addEventListener("click", openTutorial);
+    dom.tutorialClose.addEventListener("click", closeTutorial);
+    dom.tutorialFinish.addEventListener("click", closeTutorial);
+    dom.tutorialRestart.addEventListener("click", openTutorial);
+    dom.tutorialRevealMode.addEventListener("click", () => setTutorialMode("reveal"));
+    dom.tutorialFlagMode.addEventListener("click", () => setTutorialMode("flag"));
+    dom.tutorialBoard.addEventListener("click", event => {
+      const cell = event.target.closest("[data-tutorial-index]");
+      if (cell) handleTutorialCell(Number(cell.dataset.tutorialIndex));
+    });
+    dom.tutorialBoard.addEventListener("contextmenu", event => {
+      const cell = event.target.closest("[data-tutorial-index]");
+      if (!cell) return;
+      event.preventDefault();
+      setTutorialMode("flag");
+      handleTutorialCell(Number(cell.dataset.tutorialIndex), "flag");
+    });
     dom.homeForm.addEventListener("submit", event => {
       event.preventDefault();
       const floor = clamp(Math.floor(Number(dom.homeFloor.value)) || 1, 1, 15);
       const seed = dom.homeSeed.value.trim().slice(0, 64);
-      launchSettings = { seed, floor };
-      newRun({ seed, floor });
+      const minePercent = normalizeMinePercent(dom.homeMineRate.value);
+      launchSettings = { seed, floor, minePercent };
+      saveMineRatePreference(minePercent);
+      newRun({ seed, floor, minePercent });
     });
     dom.controlClose.addEventListener("click", () => closeControlMenu());
     dom.continueRun.addEventListener("click", () => closeControlMenu());
@@ -4572,7 +5129,10 @@
       renderAll();
     });
     document.addEventListener("keydown", event => {
-      if (event.key === "Escape" && dom.controlOverlay.classList.contains("open")) {
+      if (event.key === "Escape" && dom.tutorialOverlay.classList.contains("open")) {
+        event.preventDefault();
+        closeTutorial();
+      } else if (event.key === "Escape" && dom.controlOverlay.classList.contains("open")) {
         event.preventDefault();
         if (!dom.controlConfirm.hidden) {
           dom.controlConfirm.hidden = true;
@@ -4589,7 +5149,7 @@
 
     dom.debugPanel.hidden = !debugEnabled;
     if (autoStartRequested) {
-      newRun({ seed: requestedRunSeed || "", floor: requestedStartFloor, syncUrl: false });
+      newRun({ seed: requestedRunSeed || "", floor: requestedStartFloor, minePercent: requestedMinePercent, syncUrl: false });
     } else {
       showHome();
     }
